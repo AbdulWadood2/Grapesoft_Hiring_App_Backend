@@ -9,7 +9,7 @@ const candidate_routes = require("./routes/candidate_routes.js");
 const app = express();
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000"], 
     credentials: true,
   })
 );
