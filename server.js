@@ -2,7 +2,6 @@ const express = require("express");
 require("dotenv").config();
 const connectionDb = require("./config/Db.js");
 const cors = require("cors");
-
 const employer_routes = require("./routes/employer_routes.js");
 const candidate_routes = require("./routes/candidate_routes.js");
 
@@ -13,6 +12,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.options("*", cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
