@@ -16,6 +16,10 @@ const employerSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    active:{
+      type:Boolean,
+      default:true
+    }
   },
   {
     timestamps: true,

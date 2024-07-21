@@ -51,12 +51,22 @@ const jobSchema = new mongoose.Schema(
     coverLetter:{
         type: Boolean
     },
+    active:{
+        type:Boolean,
+        default:true
+    },
+    private:{
+        type:Boolean,
+        default:false
+    },
     cv:{
         type: Boolean
     },
     aboutVideo:{
         type: Boolean
-    }
+    },
+    employer:{ type: mongoose.Schema.Types.ObjectId, ref: 'employer' },
+
   },
   {
     timestamps: true,

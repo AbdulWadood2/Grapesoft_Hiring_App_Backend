@@ -126,6 +126,10 @@ const downloadFile = catchAsync(async(req,res,next)=>{
 const addJob = catchAsync(async(req,res,next)=>{
   const file = req.file;
   console.log(file);
+  if(!file?.path){
+    return next(new appError('Question file is required!',400));
+  }
+  
   const workbook = xlsx.readFile(file.path);
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
@@ -141,17 +145,37 @@ const addJob = catchAsync(async(req,res,next)=>{
     correctAnswers: question['Correct Answer(s)']?String(question['Correct Answer(s)']):"",
   }));
   req.body.questions = formattedQuestions;
-  await job.create(req.body);
+  req.body.employer = req.user._id;
+  const jobRecord = await job.create(req.body);
   return successMessage(202, res, "logIn success", {
-    accessToken,
-    // refreshToken,
-    ...JSON.parse(JSON.stringify(employerExist)),
+    ...JSON.parse(JSON.stringify(jobRecord)),
   });
 })
+const getJobs = catchAsync(async(req,res,next)=>{
+  let jobs = await job.find({active:true}).select('createdAt title active private');
+  res.status(200).json({
+    status:"success",
+    data:jobs
+  })
+})
+const updateJob = catchAsync(async(req,res,next)=>{
+  let { id } = req.body;
 
+  const jobDocument = await job.findByIdAndUpdate(
+    id,
+    req.body,
+    { new: true }
+  );
+  res.status(200).json({
+    status:"success",
+    data:jobDocument
+  })
+})
 module.exports = {
   signUpEmployer,
   logInEmployer,
   downloadFile,
-  addJob
+  addJob,
+  getJobs,
+  updateJob
 };

@@ -1,6 +1,8 @@
 const express = require("express");
-const { signUpEmployer, logInEmployer, downloadFile, addJob} = require("../controllers/employer_controller");
+const { signUpEmployer, logInEmployer, downloadFile, addJob,getJobs, updateJob} = require("../controllers/employer_controller");
+const authenticationController = require('../controllers/authentication_controller');
 const multer = require('multer');
+const employer = require("../models/employer_model");
 const route = express.Router();
 const upload = multer({ dest: 'api/v1/employer/' });
 
@@ -176,10 +178,66 @@ route.get("/downloadFile", downloadFile);
  *       201:
  *         description: Job added successfully
  */
-route.post("/addJob", upload.single('file'), addJob);
+route.post("/addJob", upload.single('file'), authenticationController.protect(employer), addJob);
 
 
 
+
+
+/**
+ * @swagger
+ * /api/v1/employer/getJobs:
+ *   get:
+ *     summary: Retrieve job listings
+ *     description: Retrieves a list of job openings available to employer.
+ *     tags:
+ *       - Employer/account
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of job openings
+ */
+
+route.get("/getJobs", authenticationController.protect(employer), getJobs);
+
+
+
+/**
+ * @swagger
+ * /api/v1/employer/updateJobs:
+ *   patch:
+ *     summary: Update job listings
+ *     description: Updates the specified fields for a list of job openings available to the employer.
+ *     tags:
+ *       - Employer/account
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - active
+ *               - private
+ *               - id
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: The id of the job.
+ *               active:
+ *                 type: boolean
+ *                 description: The active status of the job.
+ *               private:
+ *                 type: boolean
+ *                 description: The private status of the job.
+ *     responses:
+ *       200:
+ *         description: Job listings updated successfully
+ */
+route.patch("/updateJobs", authenticationController.protect(employer), updateJob);
 
 
 
