@@ -32,6 +32,10 @@ const employerSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    encryptOTP: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

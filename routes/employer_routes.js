@@ -7,6 +7,8 @@ const {
   getJobs,
   updateJob,
   getEmployerProfile,
+  sendForgetOTP,
+  verifyOTP,
 } = require("../controllers/employer_controller");
 const authenticationController = require("../controllers/authentication_controller");
 const multer = require("multer");
@@ -106,6 +108,64 @@ route.post("/login", logInEmployer);
  *         description: Successfully retrieved employer profile
  */
 route.get("/", verifyToken([employer]), getEmployerProfile);
+
+/**
+ * @swagger
+ * /api/v1/employer/sendForgetOTP:
+ *   post:
+ *     summary: Send a forget password OTP to employer
+ *     tags:
+ *       - Employer/account
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The employer's email address
+ *                 example: employer@example.com
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ */
+route.post("/sendForgetOTP", sendForgetOTP);
+
+/**
+ * @swagger
+ * /api/v1/employer/verifyOTP:
+ *   post:
+ *     summary: Verify OTP
+ *     description: Verify the OTP sent to the employer's email.
+ *     tags:
+ *       - Employer/account
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - otp
+ *               - email
+ *             properties:
+ *               otp:
+ *                 type: number
+ *                 example: 123456"
+ *                 description: The OTP sent to the employer's email
+ *               email:
+ *                 type: string
+ *                 example: "example@example.com"
+ *                 description: The employer's email address
+ *     responses:
+ *       200:
+ *         description: OTP verified
+ */
+route.post("/verifyOTP", verifyOTP);
 
 /**
  * @swagger

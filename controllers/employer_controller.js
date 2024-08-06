@@ -22,8 +22,13 @@ const {
 } = require("../validation/employee_joi_validation");
 // crypto.js
 const CryptoJS = require("crypto-js");
+// models
 const job = require("../models/job_model");
+// gererate signed url
 const { generateSignedUrl } = require("./awsController");
+// email sent construction
+const ForgetPasswordEmail = require("../emailSender/forgetPassword/ForgetPasswordEmail.js");
+const { generateRandomNumber } = require("../functions/randomDigits_functions");
 
 // method post
 // endPoint /api/v1/employer/signup
@@ -123,6 +128,53 @@ const getEmployerProfile = catchAsync(async (req, res, next) => {
   const avatar = await generateSignedUrl([employerExist.avatar]);
   employerExist.avatar = avatar[0];
   return successMessage(200, res, "getEmployerProfile success", employerExist);
+});
+
+// method post
+// endPoint /api/v1/employer/sendForgetOTP
+// description get employer profile
+const sendForgetOTP = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+  const employerExist = await employer_model.findOne({ email });
+  if (!employerExist) {
+    return next(new appError("account not found!", 400));
+  }
+  if (!employerExist.active) {
+    return next(new appError("account is blocked!", 400));
+  }
+  const otp = generateRandomNumber(6);
+  const encryptedOtp = CryptoJS.AES.encrypt(
+    JSON.stringify({ otp, email }),
+    process.env.CRYPTO_SEC
+  ).toString();
+  employerExist.encryptOTP = encryptedOtp;
+  await employerExist.save();
+  await new ForgetPasswordEmail({ email }, otp).sendVerificationCode();
+  return successMessage(200, res, "sendForgetOTP success");
+});
+
+// method post
+// endPoint /api/v1/employer/verifyOTP
+// description verify OTP
+const verifyOTP = catchAsync(async (req, res, next) => {
+  const { otp, email } = req.body;
+  const employerExist = await employer_model.findOne({ email });
+  if (!employerExist) {
+    return next(new appError("account not found!", 400));
+  }
+  if (!employerExist.active) {
+    return next(new appError("account is blocked!", 400));
+  }
+  const decryptedOtp = JSON.parse(
+    CryptoJS.AES.decrypt(
+      employerExist.encryptOTP,
+      process.env.CRYPTO_SEC
+    ).toString(CryptoJS.enc.Utf8, employerExist.encryptOTP)
+  );
+  if (otp !== decryptedOtp.otp) {
+    return next(new appError("invalid OTP!", 400));
+  }
+  return successMessage(200, res, "OTP verified");
 });
 
 const downloadFile = catchAsync(async (req, res, next) => {
@@ -235,6 +287,8 @@ module.exports = {
   signUpEmployer,
   logInEmployer,
   getEmployerProfile,
+  sendForgetOTP,
+  verifyOTP,
   downloadFile,
   addJob,
   getJobs,
