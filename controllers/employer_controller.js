@@ -142,7 +142,7 @@ const sendForgetOTP = catchAsync(async (req, res, next) => {
   if (!employerExist.active) {
     return next(new appError("account is blocked!", 400));
   }
-  const otp = generateRandomNumber(6);
+  const otp = generateRandomNumber(5);
   const encryptedOtp = CryptoJS.AES.encrypt(
     JSON.stringify({ otp, email }),
     process.env.CRYPTO_SEC
@@ -171,7 +171,7 @@ const verifyOTP = catchAsync(async (req, res, next) => {
       process.env.CRYPTO_SEC
     ).toString(CryptoJS.enc.Utf8, employerExist.encryptOTP)
   );
-  if (otp !== decryptedOtp.otp) {
+  if (Number(otp) !== Number(decryptedOtp.otp)) {
     return next(new appError("invalid OTP!", 400));
   }
   return successMessage(200, res, "OTP verified");
@@ -199,7 +199,7 @@ const resetPassword = catchAsync(async (req, res, next) => {
       employerExist.encryptOTP
     )
   );
-  if (otp !== decryptOTP.otp) {
+  if (Number(otp) !== Number(decryptOTP.otp)) {
     return next(new appError("invalid OTP!", 400));
   }
   const encryptedPassword = CryptoJS.AES.encrypt(
