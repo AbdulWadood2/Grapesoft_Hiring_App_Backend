@@ -1,10 +1,19 @@
 const express = require("express");
-const { signUpEmployer, logInEmployer, downloadFile, addJob,getJobs, updateJob} = require("../controllers/employer_controller");
-const authenticationController = require('../controllers/authentication_controller');
-const multer = require('multer');
+const {
+  signUpEmployer,
+  logInEmployer,
+  downloadFile,
+  addJob,
+  getJobs,
+  updateJob,
+  getEmployerProfile,
+} = require("../controllers/employer_controller");
+const authenticationController = require("../controllers/authentication_controller");
+const multer = require("multer");
 const employer = require("../models/employer_model");
+const { verifyToken } = require("../authorization/verifyToken");
 const route = express.Router();
-const upload = multer({ dest: 'api/v1/employer/' });
+const upload = multer({ dest: "api/v1/employer/" });
 
 /**
  * @swagger
@@ -50,9 +59,6 @@ const upload = multer({ dest: 'api/v1/employer/' });
  */
 route.post("/signup", signUpEmployer);
 
-
-
-
 /**
  * @swagger
  * /api/v1/employer/login:
@@ -85,10 +91,21 @@ route.post("/signup", signUpEmployer);
  */
 route.post("/login", logInEmployer);
 
-
-
-
-
+/**
+ * @swagger
+ * /api/v1/employer:
+ *   get:
+ *     summary: Get employer profile
+ *     description: Retrieve the profile of the employer using the employer ID from the authenticated user.
+ *     tags:
+ *       - Employer/account
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved employer profile
+ */
+route.get("/", verifyToken([employer]), getEmployerProfile);
 
 /**
  * @swagger
@@ -110,13 +127,6 @@ route.post("/login", logInEmployer);
  *               format: binary
  */
 route.get("/downloadFile", downloadFile);
-
-
-
-
-
-
-
 
 /**
  * @swagger
@@ -178,11 +188,12 @@ route.get("/downloadFile", downloadFile);
  *       201:
  *         description: Job added successfully
  */
-route.post("/addJob", upload.single('file'), authenticationController.protect(employer), addJob);
-
-
-
-
+route.post(
+  "/addJob",
+  upload.single("file"),
+  authenticationController.protect(employer),
+  addJob
+);
 
 /**
  * @swagger
@@ -200,8 +211,6 @@ route.post("/addJob", upload.single('file'), authenticationController.protect(em
  */
 
 route.get("/getJobs", authenticationController.protect(employer), getJobs);
-
-
 
 /**
  * @swagger
@@ -237,9 +246,10 @@ route.get("/getJobs", authenticationController.protect(employer), getJobs);
  *       200:
  *         description: Job listings updated successfully
  */
-route.patch("/updateJobs", authenticationController.protect(employer), updateJob);
-
-
-
+route.patch(
+  "/updateJobs",
+  authenticationController.protect(employer),
+  updateJob
+);
 
 module.exports = route;
