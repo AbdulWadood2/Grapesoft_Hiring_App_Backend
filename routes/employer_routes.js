@@ -9,6 +9,7 @@ const {
   getEmployerProfile,
   sendForgetOTP,
   verifyOTP,
+  resetPassword,
 } = require("../controllers/employer_controller");
 const authenticationController = require("../controllers/authentication_controller");
 const multer = require("multer");
@@ -166,6 +167,43 @@ route.post("/sendForgetOTP", sendForgetOTP);
  *         description: OTP verified
  */
 route.post("/verifyOTP", verifyOTP);
+
+/**
+ * @swagger
+ * /api/v1/employer/resetPassword:
+ *   post:
+ *     summary: Reset the password
+ *     description: Allows an employer to reset their password using email and OTP.
+ *     tags:
+ *       - Employer/account
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The employer's email.
+ *                 example: employer@example.com
+ *               otp:
+ *                 type: string
+ *                 description: The OTP sent to the employer's email.
+ *                 example: 123456
+ *               password:
+ *                 type: string
+ *                 description: The new password to be set.
+ *                 example: NewStrongPassword123!
+ *     responses:
+ *       200:
+ *         description: Password reset successfully.
+ */
+route.post("/resetPassword", resetPassword);
 
 /**
  * @swagger

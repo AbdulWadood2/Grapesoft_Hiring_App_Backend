@@ -177,6 +177,41 @@ const verifyOTP = catchAsync(async (req, res, next) => {
   return successMessage(200, res, "OTP verified");
 });
 
+// method post
+// endPoint /api/v1/employer/resetPassword
+// description reset the password
+const resetPassword = catchAsync(async (req, res, next) => {
+  const { password, email, otp } = req.body;
+  const employerExist = await employer_model.findOne({ email });
+  if (!employerExist) {
+    return next(new appError("account not found!", 400));
+  }
+  if (!employerExist.active) {
+    return next(new appError("account is blocked!", 400));
+  }
+  if (!employerExist.encryptOTP) {
+    return next(new appError("send otp first", 400));
+  }
+  const encryptedOtp = employerExist.encryptOTP;
+  const decryptOTP = JSON.parse(
+    CryptoJS.AES.decrypt(encryptedOtp, process.env.CRYPTO_SEC).toString(
+      CryptoJS.enc.Utf8,
+      employerExist.encryptOTP
+    )
+  );
+  if (otp !== decryptOTP.otp) {
+    return next(new appError("invalid OTP!", 400));
+  }
+  const encryptedPassword = CryptoJS.AES.encrypt(
+    password,
+    process.env.CRYPTO_SEC
+  ).toString();
+  employerExist.password = encryptedPassword;
+  employerExist.encryptOTP = null;
+  await employerExist.save();
+  return successMessage(200, res, "password reset successfully");
+});
+
 const downloadFile = catchAsync(async (req, res, next) => {
   const filename = "Testtemplate.xlsx";
   // Define the folder where your files are stored
@@ -289,6 +324,7 @@ module.exports = {
   getEmployerProfile,
   sendForgetOTP,
   verifyOTP,
+  resetPassword,
   downloadFile,
   addJob,
   getJobs,
