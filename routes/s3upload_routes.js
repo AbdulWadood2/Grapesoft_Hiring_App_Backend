@@ -4,19 +4,19 @@ const route = express.Router();
 const multer = require("multer");
 
 const multerStorageUser = multer.diskStorage({
-    destination: "public/img/users/", // Destination to store video
-    filename: (req, file, next) => {
-      if (file.fieldname === "photo") {
-        next(null, "photo" + ".jpg");
-      } else if (file.fieldname === "cover") {
-        next(null, file.fieldname + "_" + Date.now() + ".jpg");
-      } else if (file.fieldname === "video") {
-        next(null, file.fieldname + "_" + Date.now() + ".mp4");
-      } else if (file.fieldname === "audio") {
-        next(null, file.fieldname + "_" + Date.now() + ".mp3");
-      }
-    },
-  });
+  destination: "public/img/users/", // Destination to store video
+  filename: (req, file, next) => {
+    if (file.fieldname === "photo") {
+      next(null, "photo" + ".jpg");
+    } else if (file.fieldname === "cover") {
+      next(null, file.fieldname + "_" + Date.now() + ".jpg");
+    } else if (file.fieldname === "video") {
+      next(null, file.fieldname + "_" + Date.now() + ".mp4");
+    } else if (file.fieldname === "audio") {
+      next(null, file.fieldname + "_" + Date.now() + ".mp3");
+    }
+  },
+});
 const uploadsUser = multer({
   storage: multerStorageUser,
 });
@@ -25,12 +25,12 @@ const uploadFieldsUser = uploadsUser.fields([{ name: "photo", maxCount: 100 }]);
 
 /**
  * @swagger
- * /api/v1/s3/photo:
+ * /api/v1/s3/:
  *   post:
  *     summary: Upload photos
  *     description: Uploads multiple photos to the S3 bucket.
  *     tags:
- *       - S3/account
+ *       - S3/file
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -54,9 +54,6 @@ const uploadFieldsUser = uploadsUser.fields([{ name: "photo", maxCount: 100 }]);
  *       500:
  *         description: Internal server error
  */
-route.post("/photo", uploadFieldsUser, uploadProductImg);
-
+route.post("/", uploadFieldsUser, uploadProductImg);
 
 module.exports = route;
-
-

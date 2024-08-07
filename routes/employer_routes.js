@@ -10,6 +10,7 @@ const {
   sendForgetOTP,
   verifyOTP,
   resetPassword,
+  updateProfile,
 } = require("../controllers/employer_controller");
 const authenticationController = require("../controllers/authentication_controller");
 const multer = require("multer");
@@ -204,6 +205,58 @@ route.post("/verifyOTP", verifyOTP);
  *         description: Password reset successfully.
  */
 route.post("/resetPassword", resetPassword);
+
+/**
+ * @swagger
+ * /api/v1/employer/:
+ *   put:
+ *     summary: Update the employer profile
+ *     description: Updates the employer profile with the provided information.
+ *     tags:
+ *       - Employer/account
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: uri
+ *                 nullable: true
+ *                 description: URL of the employer's avatar image
+ *               first_name:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 255
+ *                 description: First name of the employer
+ *               last_name:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 255
+ *                 description: Last name of the employer
+ *               company_name:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 255
+ *                 description: Company name of the employer
+ *               NewApplication:
+ *                 type: boolean
+ *                 description: Indicates if there is a new application
+ *               TestTaken:
+ *                 type: boolean
+ *                 description: Indicates if the test is taken
+ *               ContractSigned:
+ *                 type: boolean
+ *                 description: Indicates if the contract is signed
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ */
+route.put("/", verifyToken([employer]), updateProfile);
 
 /**
  * @swagger

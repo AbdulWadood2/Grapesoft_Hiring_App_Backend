@@ -17,8 +17,6 @@ exports.protect = (model, role = undefined, statusForPackage = undefined) =>
       // console.log("111");
       token = req.headers.authorization.split(" ")[1];
     }
-    // token = req.cookies.accessToken
-    console.log({ token });
     if (!token) {
       return next(
         new AppError("You are not logged in! please login to get access", 401)
@@ -29,7 +27,6 @@ exports.protect = (model, role = undefined, statusForPackage = undefined) =>
       `${process.env.JWT_SEC}`
     );
     let userChecks = false;
-    console.log(decoded.id);
     userChecks = await model.findOne({
       _id: new mongoose.Types.ObjectId(decoded.id),
       active: true,
@@ -43,8 +40,6 @@ exports.protect = (model, role = undefined, statusForPackage = undefined) =>
         new AppError("You are not logged in! please login to get access", 404)
       );
     }
-
-    console.log(model);
 
     if (!userChecks) {
       return next(

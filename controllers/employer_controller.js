@@ -19,6 +19,7 @@ const { successMessage } = require("../successHandlers/successController");
 const {
   employerValidationSchema,
   employerLogInValidationSchema,
+  editEmployerProfileSchema,
 } = require("../validation/employee_joi_validation");
 // crypto.js
 const CryptoJS = require("crypto-js");
@@ -29,6 +30,10 @@ const { generateSignedUrl } = require("./awsController");
 // email sent construction
 const ForgetPasswordEmail = require("../emailSender/forgetPassword/ForgetPasswordEmail.js");
 const { generateRandomNumber } = require("../functions/randomDigits_functions");
+const {
+  getFileName,
+  checkDuplicateAwsImgsInRecords,
+} = require("../functions/aws_functions.js");
 
 // method post
 // endPoint /api/v1/employer/signup
@@ -37,7 +42,6 @@ const signUpEmployer = catchAsync(async (req, res, next) => {
   const { error, value } = employerValidationSchema.validate(req.body);
   if (error) {
     const errors = error.details.map((el) => el.message);
-    console.log({ errors });
     return next(new appError(errors, 400));
   }
   const employerExist = await employer_model.findOne({
@@ -212,6 +216,46 @@ const resetPassword = catchAsync(async (req, res, next) => {
   return successMessage(200, res, "password reset successfully");
 });
 
+// method put
+// endpoint /api/v1/employer/
+// description update the employer profile
+const updateProfile = catchAsync(async (req, res, next) => {
+  const { error, value } = editEmployerProfileSchema.validate(req.body);
+  if (error) {
+    const errors = error.details.map((el) => el.message);
+    return next(new appError(errors, 400));
+  }
+  let employer = await employer_model.findById(req.user.id);
+  if (value.avatar) {
+    [value.avatar] = await getFileName([value.avatar]);
+    if (value.avatar !== employer.avatar) {
+      const { message, success } = await checkDuplicateAwsImgsInRecords(
+        [value.avatar],
+        "employer avatar"
+      );
+      if (!success) {
+        return next(new appError(message, 400));
+      }
+    }
+  }
+  console.log(value.avatar);
+  employer = await employer_model
+    .findOneAndUpdate(
+      {
+        _id: req.user.id,
+      },
+      {
+        ...value,
+      },
+      {
+        new: true,
+      }
+    )
+    .select("-password -refreshToken -encryptOTP");
+  [employer.avatar] = await generateSignedUrl([employer.avatar]);
+  return successMessage(200, res, "profile updated successfully", employer);
+});
+
 const downloadFile = catchAsync(async (req, res, next) => {
   const filename = "Testtemplate.xlsx";
   // Define the folder where your files are stored
@@ -325,6 +369,7 @@ module.exports = {
   sendForgetOTP,
   verifyOTP,
   resetPassword,
+  updateProfile,
   downloadFile,
   addJob,
   getJobs,

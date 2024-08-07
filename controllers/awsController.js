@@ -2,7 +2,7 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const AppError = require("../errorHandlers/appError");
 const fs = require("fs");
 const s3 = new S3Client({
-  region: "eu-north-1", // Ensure this is the correct region
+  region: process.env.AWS_REGION, // Ensure this is the correct region
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -12,7 +12,6 @@ const s3 = new S3Client({
 const uploadProductImg = async (req, res, next) => {
   try {
     const files = req.files["photo"];
-    console.log(req.files);
 
     if (!files || files.length === 0) {
       return next(new AppError("No files provided", 400));
@@ -22,7 +21,7 @@ const uploadProductImg = async (req, res, next) => {
     const uploadPromises = files.map((file) => {
       const fileName = `${file.fieldname}_${Date.now()}_${file.originalname}`;
       const params = {
-        Bucket: "junkmates", // Ensure this is the correct bucket name
+        Bucket: process.env.AWS_BUCKET_NAME, // Ensure this is the correct bucket name
         Key: fileName,
         Body: fs.readFileSync(file.path),
         ContentType: file.mimetype,
@@ -30,7 +29,7 @@ const uploadProductImg = async (req, res, next) => {
 
       return s3.send(new PutObjectCommand(params)).then(() => {
         // Construct the URL for the uploaded object
-        return `https://junkmates.s3.eu-north-1.amazonaws.com/${fileName}`;
+        return `${fileName}`;
       });
     });
 
