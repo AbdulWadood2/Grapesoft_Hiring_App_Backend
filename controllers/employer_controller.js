@@ -33,6 +33,7 @@ const { generateRandomNumber } = require("../functions/randomDigits_functions");
 const {
   getFileName,
   checkDuplicateAwsImgsInRecords,
+  checkImageExists,
 } = require("../functions/aws_functions.js");
 
 // method post
@@ -227,6 +228,17 @@ const updateProfile = catchAsync(async (req, res, next) => {
   }
   let employer = await employer_model.findById(req.user.id);
   if (value.avatar) {
+    const avatarInAwsRxists = await checkImageExists([value.avatar]);
+    if (!avatarInAwsRxists) {
+      return next(
+        new appError(
+          `
+        image not exist in aws
+        `,
+          400
+        )
+      );
+    }
     [value.avatar] = await getFileName([value.avatar]);
     if (value.avatar !== employer.avatar) {
       const { message, success } = await checkDuplicateAwsImgsInRecords(
