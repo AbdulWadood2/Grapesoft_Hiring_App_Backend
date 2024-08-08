@@ -18,10 +18,10 @@ const employerLogInValidationSchema = Joi.object({
 });
 
 const editEmployerProfileSchema = Joi.object({
-  avatar: Joi.string().uri().allow(null),
-  first_name: Joi.string().min(1).max(255).required(),
-  last_name: Joi.string().min(1).max(255).required(),
-  company_name: Joi.string().min(1).max(255).required(),
+  avatar: Joi.string().allow(null),
+  first_name: Joi.string().min(1).max(255),
+  last_name: Joi.string().min(1).max(255),
+  company_name: Joi.string().min(1).max(255),
   NewApplication: Joi.boolean(),
   TestTaken: Joi.boolean(),
   ContractSigned: Joi.boolean(),

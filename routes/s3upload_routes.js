@@ -3,25 +3,12 @@ const { uploadProductImg } = require("../controllers/awsController");
 const route = express.Router();
 const multer = require("multer");
 
-const multerStorageUser = multer.diskStorage({
-  destination: "public/img/users/", // Destination to store video
-  filename: (req, file, next) => {
-    if (file.fieldname === "photo") {
-      next(null, "photo" + ".jpg");
-    } else if (file.fieldname === "cover") {
-      next(null, file.fieldname + "_" + Date.now() + ".jpg");
-    } else if (file.fieldname === "video") {
-      next(null, file.fieldname + "_" + Date.now() + ".mp4");
-    } else if (file.fieldname === "audio") {
-      next(null, file.fieldname + "_" + Date.now() + ".mp3");
-    }
-  },
-});
+const multerStorageUser = multer.memoryStorage();
 const uploadsUser = multer({
   storage: multerStorageUser,
 });
 
-const uploadFieldsUser = uploadsUser.fields([{ name: "photo", maxCount: 100 }]);
+const uploadFieldsUser = uploadsUser.fields([{ name: "file", maxCount: 100 }]);
 
 /**
  * @swagger

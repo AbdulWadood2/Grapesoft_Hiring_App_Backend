@@ -11,34 +11,30 @@ const s3 = new S3Client({
 
 const uploadProductImg = async (req, res, next) => {
   try {
-    const files = req.files["photo"];
-
+    const files = req.files.file;
     if (!files || files.length === 0) {
       return next(new AppError("No files provided", 400));
     }
 
-    // Create an array to store promises for each S3 upload
     const uploadPromises = files.map((file) => {
       const fileName = `${file.fieldname}_${Date.now()}_${file.originalname}`;
       const params = {
-        Bucket: process.env.AWS_BUCKET_NAME, // Ensure this is the correct bucket name
+        Bucket: process.env.AWS_BUCKET_NAME,
         Key: fileName,
-        Body: fs.readFileSync(file.path),
+        Body: file.buffer, // Use file.buffer instead of reading from file.path
         ContentType: file.mimetype,
       };
 
       return s3.send(new PutObjectCommand(params)).then(() => {
-        // Construct the URL for the uploaded object
-        return `${fileName}`;
+        return fileName;
       });
     });
 
-    // Wait for all S3 uploads to complete
     const urls = await Promise.all(uploadPromises);
 
     res.status(200).json({
       status: "success",
-      photo: urls, // Return the array of URLs
+      photos: urls,
     });
   } catch (error) {
     return next(new AppError(error.message, 500));
