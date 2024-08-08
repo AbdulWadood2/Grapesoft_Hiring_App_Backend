@@ -11,6 +11,7 @@ const {
   verifyOTP,
   resetPassword,
   updateProfile,
+  changePasswordManually,
 } = require("../controllers/employer_controller");
 const authenticationController = require("../controllers/authentication_controller");
 const multer = require("multer");
@@ -257,6 +258,40 @@ route.post("/resetPassword", resetPassword);
  *         description: Profile updated successfully
  */
 route.put("/", verifyToken([employer]), updateProfile);
+
+/**
+ * @swagger
+ * /api/v1/employer/changePasswordManually:
+ *   post:
+ *     summary: Change employer password manually
+ *     tags:
+ *       - Employer/account
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               oldPassword:
+ *                 type: string
+ *                 description: The current password of the employer
+ *                 example: oldPassword123
+ *               newPassword:
+ *                 type: string
+ *                 description: The new password to set
+ *                 example: newPassword456
+ *     responses:
+ *       202:
+ *         description: Password changed successfully
+ */
+route.post(
+  "/changePasswordManually",
+  verifyToken([employer]),
+  changePasswordManually
+);
 
 /**
  * @swagger

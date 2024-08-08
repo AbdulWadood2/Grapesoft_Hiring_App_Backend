@@ -268,6 +268,36 @@ const updateProfile = catchAsync(async (req, res, next) => {
   return successMessage(200, res, "profile updated successfully", employer);
 });
 
+// method post
+// endpoint /api/v1/employer/changePasswordManually
+// description change password manually
+const changePasswordManually = catchAsync(async (req, res, next) => {
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword) {
+    return next(new appError("old password is required", 400));
+  }
+  if (!newPassword) {
+    return next(new appError("new password is required", 400));
+  }
+  const employer = await employer_model.findOne({
+    _id: req.user.id,
+  });
+  // dycrypt the password
+  let bytes = CryptoJS.AES.decrypt(employer.password, process.env.CRYPTO_SEC);
+  let originalPassword = bytes.toString(CryptoJS.enc.Utf8);
+  if (originalPassword !== oldPassword) {
+    return next(new appError("old password is incorrect", 400));
+  }
+  // Encrypt the password
+  const encryptedPassword = CryptoJS.AES.encrypt(
+    newPassword,
+    process.env.CRYPTO_SEC
+  ).toString();
+  employer.password = encryptedPassword;
+  await employer.save();
+  successMessage(202, res, `your password has been changed successfully`);
+});
+
 const downloadFile = catchAsync(async (req, res, next) => {
   const filename = "Testtemplate.xlsx";
   // Define the folder where your files are stored
@@ -382,6 +412,7 @@ module.exports = {
   verifyOTP,
   resetPassword,
   updateProfile,
+  changePasswordManually,
   downloadFile,
   addJob,
   getJobs,
