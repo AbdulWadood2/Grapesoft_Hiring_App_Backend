@@ -5,6 +5,7 @@ const cors = require("cors");
 const employer_routes = require("./routes/employer_routes.js");
 const candidate_routes = require("./routes/candidate_routes.js");
 const s3_routes = require("./routes/s3upload_routes.js");
+const testBuilder_routes = require("./routes/testBuilder_routes.js");
 
 const app = express();
 app.use(
@@ -22,6 +23,7 @@ app.use(express.json());
 app.use("/api/v1/employer", employer_routes);
 app.use("/api/v1/candidate", candidate_routes);
 app.use("/api/v1/s3", s3_routes);
+app.use("/api/v1/testBuilder", testBuilder_routes);
 
 // Connect to MongoDB
 connectionDb().catch((error) => {

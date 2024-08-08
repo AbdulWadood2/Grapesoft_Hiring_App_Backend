@@ -1,6 +1,12 @@
 const express = require("express");
 const { uploadProductImg } = require("../controllers/awsController");
 const route = express.Router();
+
+// model
+const employer_model = require("../models/employer_model");
+
+const { verifyToken } = require("../authorization/verifyToken");
+
 const multer = require("multer");
 
 const multerStorageUser = multer.memoryStorage();
@@ -41,6 +47,11 @@ const uploadFieldsUser = uploadsUser.fields([{ name: "file", maxCount: 100 }]);
  *       500:
  *         description: Internal server error
  */
-route.post("/", uploadFieldsUser, uploadProductImg);
+route.post(
+  "/",
+  verifyToken([employer_model]),
+  uploadFieldsUser,
+  uploadProductImg
+);
 
 module.exports = route;

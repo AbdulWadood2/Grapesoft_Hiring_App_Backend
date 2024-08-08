@@ -7,14 +7,14 @@ const employerValidationSchema = Joi.object({
   password: Joi.string().min(6).required(),
   company_name: Joi.string().required(),
 }).options({
-  abortEarly: true,
+  abortEarly: false,
 });
 
 const employerLogInValidationSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
 }).options({
-  abortEarly: true,
+  abortEarly: false,
 });
 
 const editEmployerProfileSchema = Joi.object({
@@ -26,7 +26,7 @@ const editEmployerProfileSchema = Joi.object({
   TestTaken: Joi.boolean(),
   ContractSigned: Joi.boolean(),
 }).options({
-  abortEarly: true,
+  abortEarly: false,
 });
 
 module.exports = {
