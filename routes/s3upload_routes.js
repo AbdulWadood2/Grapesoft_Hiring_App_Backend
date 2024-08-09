@@ -20,7 +20,7 @@ const uploadFieldsUser = uploadsUser.fields([{ name: "file", maxCount: 100 }]);
  * @swagger
  * /api/v1/s3/:
  *   post:
- *     summary: Upload photos
+ *     summary: Upload file
  *     description: Uploads multiple photos to the S3 bucket.
  *     tags:
  *       - S3/file
@@ -33,7 +33,7 @@ const uploadFieldsUser = uploadsUser.fields([{ name: "file", maxCount: 100 }]);
  *           schema:
  *             type: object
  *             properties:
- *               photo:
+ *               file:
  *                 type: array
  *                 items:
  *                   type: string

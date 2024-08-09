@@ -2,10 +2,6 @@ const express = require("express");
 const {
   signUpEmployer,
   logInEmployer,
-  downloadFile,
-  addJob,
-  getJobs,
-  updateJob,
   getEmployerProfile,
   sendForgetOTP,
   verifyOTP,
@@ -13,7 +9,6 @@ const {
   updateProfile,
   changePasswordManually,
 } = require("../controllers/employer_controller");
-const authenticationController = require("../controllers/authentication_controller");
 const multer = require("multer");
 const employer = require("../models/employer_model");
 const { verifyToken } = require("../authorization/verifyToken");
@@ -291,151 +286,6 @@ route.post(
   "/changePasswordManually",
   verifyToken([employer]),
   changePasswordManually
-);
-
-/**
- * @swagger
- * /api/v1/employer/downloadFile:
- *   get:
- *     summary: Download a file
- *     description: Downloads a file from the server.
- *     tags:
- *       - Employer/account
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: File downloaded successfully
- *         content:
- *           application/octet-stream:
- *             schema:
- *               type: string
- *               format: binary
- */
-route.get("/downloadFile", downloadFile);
-
-/**
- * @swagger
- * /api/v1/employer/addJob:
- *   post:
- *     summary: Add a new job
- *     description: Adds a new job with the specified details.
- *     tags:
- *       - Employer/account
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *                 default: null
- *               specification[description]:
- *                 type: string
- *                 required: true
- *               specification[video]:
- *                 type: string
- *                 required: true
- *               specification[pdf]:
- *                 type: string
- *                 required: true
- *               training[description]:
- *                 type: string
- *                 required: true
- *               training[video]:
- *                 type: string
- *                 required: true
- *               training[pdf]:
- *                 type: string
- *                 required: true
- *               contract[description]:
- *                 type: string
- *                 required: true
- *               contract[file]:
- *                 type: string
- *                 required: true
- *               testTime:
- *                 type: string
- *                 required: true
- *               file:
- *                 type: string
- *                 format: binary
- *               coverLetter:
- *                 type: boolean
- *               cv:
- *                 type: boolean
- *               aboutVideo:
- *                 type: boolean
- *     responses:
- *       201:
- *         description: Job added successfully
- */
-route.post(
-  "/addJob",
-  upload.single("file"),
-  authenticationController.protect(employer),
-  addJob
-);
-
-/**
- * @swagger
- * /api/v1/employer/getJobs:
- *   get:
- *     summary: Retrieve job listings
- *     description: Retrieves a list of job openings available to employer.
- *     tags:
- *       - Employer/account
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: A list of job openings
- */
-
-route.get("/getJobs", authenticationController.protect(employer), getJobs);
-
-/**
- * @swagger
- * /api/v1/employer/updateJobs:
- *   patch:
- *     summary: Update job listings
- *     description: Updates the specified fields for a list of job openings available to the employer.
- *     tags:
- *       - Employer/account
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - active
- *               - private
- *               - id
- *             properties:
- *               id:
- *                 type: string
- *                 description: The id of the job.
- *               active:
- *                 type: boolean
- *                 description: The active status of the job.
- *               private:
- *                 type: boolean
- *                 description: The private status of the job.
- *     responses:
- *       200:
- *         description: Job listings updated successfully
- */
-route.patch(
-  "/updateJobs",
-  authenticationController.protect(employer),
-  updateJob
 );
 
 module.exports = route;

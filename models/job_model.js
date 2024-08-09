@@ -2,71 +2,46 @@ const mongoose = require("mongoose");
 
 const jobSchema = new mongoose.Schema(
   {
-    title: { type: String, default: null },
+    employerId: { type: mongoose.Schema.Types.ObjectId, required: true },
+    title: {
+      type: String,
+      required: true,
+    },
     specification: {
-        description:{
-            type: String, required: true 
-        },
-        video: { type: String, required: true },
-        pdf: { type: String, required: true },
+      title: { type: String, required: true },
+      video: { type: String, required: true },
+      docs: { type: String, required: true },
     },
     training: {
-        description:{
-            type: String, required: true 
-        },
-        video: { type: String, required: true },
-        pdf: { type: String, required: true },
+      title: { type: String, required: true },
+      video: { type: String, required: true },
+      docs: { type: String, required: true },
     },
     contract: {
-        description:{
-            type: String, required: true 
-        },
-        file: { type: String, required: true },
+      title: { type: String, required: true },
+      video: { type: String, required: true },
     },
-    testTime: { type: String, required: true },
-    questions:[{
-        questionNumber: {
-            type: Number,
-            required: true,
-        },
-        questionType: {
-            type: String,
-            enum: ['Multiple choice', 'Open', 'File'],
-            required: true,
-        },
-        questionText: {
-            type: String,
-            required: true,
-        },
-        answerOptions: {
-            type: [String],
-        },
-        maxWordCount: {
-            type: Number,
-        },
-        correctAnswers: {
-            type: [String],
-        },
-    }],
-    coverLetter:{
-        type: Boolean
+    testBuilderId: { type: mongoose.Schema.Types.ObjectId, required: true },
+    status: {
+      type: Boolean,
+      default: true,
     },
-    active:{
-        type:Boolean,
-        default:true
+    privateOrPublic: {
+      type: Boolean,
+      default: true,
     },
-    private:{
-        type:Boolean,
-        default:false
+    coverLetter: {
+      type: Boolean,
+      default: true,
     },
-    cv:{
-        type: Boolean
+    cv: {
+      type: Boolean,
+      default: true,
     },
-    aboutVideo:{
-        type: Boolean
+    aboutVideo: {
+      type: Boolean,
+      default: true,
     },
-    employer:{ type: mongoose.Schema.Types.ObjectId, ref: 'employer' },
-
   },
   {
     timestamps: true,

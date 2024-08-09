@@ -20,16 +20,25 @@ const s3 = new S3Client({
 
 // models
 const employer_model = require("../models/employer_model.js");
+const job_model = require("../models/job_model.js");
 
 // functions
 const checkDuplicateAwsImgsInRecords = async (fileNames, fieldName) => {
   try {
     const promises = fileNames.map(async (fileName) => {
-      const [employerAvatar] = await Promise.all([
+      const [employerAvatar, job] = await Promise.all([
         employer_model.findOne({ avatar: fileName }),
+        job_model.findOne({
+          $or: [
+            { "specification.video": fileName },
+            { "specification.docs": fileName },
+            { "training.video": fileName },
+            { "training.docs": fileName },
+            { "contract.video": fileName },
+          ],
+        }),
       ]);
-
-      if (employerAvatar) {
+      if (employerAvatar || job) {
         return fileName;
       }
     });
@@ -37,7 +46,6 @@ const checkDuplicateAwsImgsInRecords = async (fileNames, fieldName) => {
     const results = await Promise.all(promises);
 
     const duplicates = results.filter((fileName) => fileName);
-
     if (duplicates.length > 0) {
       return {
         message: `These ${fieldName} are already used: ${duplicates.join(
