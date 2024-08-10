@@ -11,7 +11,7 @@ const testBuilder_create_validation = Joi.object({
         options: Joi.alternatives()
           .try(
             Joi.when("type", {
-              is: 2,
+              is: 1,
               then: Joi.array().items(Joi.string()).required(),
               otherwise: Joi.valid(null),
             })
@@ -20,7 +20,7 @@ const testBuilder_create_validation = Joi.object({
         correctAnswer: Joi.alternatives()
           .try(
             Joi.when("type", {
-              is: 2,
+              is: 1,
               then: Joi.number().integer().required(),
               otherwise: Joi.valid(null),
             })
@@ -59,7 +59,7 @@ const testBuilder_addQuestion_validation = Joi.object({
         options: Joi.alternatives()
           .try(
             Joi.when("type", {
-              is: 2,
+              is: 1,
               then: Joi.array().items(Joi.string()).required(),
               otherwise: Joi.valid(null),
             })
@@ -68,7 +68,7 @@ const testBuilder_addQuestion_validation = Joi.object({
         correctAnswer: Joi.alternatives()
           .try(
             Joi.when("type", {
-              is: 2,
+              is: 1,
               then: Joi.number().integer().required(),
               otherwise: Joi.valid(null),
             })
@@ -96,7 +96,7 @@ const testBuilder_editQuestion_validation = Joi.object({
   options: Joi.alternatives()
     .try(
       Joi.when("type", {
-        is: 2,
+        is: 1,
         then: Joi.array().items(Joi.string()).required(),
         otherwise: Joi.valid(null),
       })
@@ -105,7 +105,7 @@ const testBuilder_editQuestion_validation = Joi.object({
   correctAnswer: Joi.alternatives()
     .try(
       Joi.when("type", {
-        is: 2,
+        is: 1,
         then: Joi.number().integer().required(),
         otherwise: Joi.valid(null),
       })

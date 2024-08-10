@@ -41,8 +41,8 @@ const createTestBuilder = catchAsync(async (req, res, next) => {
     value.questions
   );
   successMessage(202, res, "Test created successfully", {
-    createdTestBuilder: createdTestBuilder,
-    createdTestQuestions,
+    ...createdTestBuilder,
+    questions: createdTestQuestions,
   });
 });
 
@@ -132,6 +132,10 @@ const updateTestBuilder = catchAsync(async (req, res, next) => {
   if (!updatedTestBuilder) {
     return next(new appError("Test Builder not found", 400));
   }
+  const testQuestions = await testQuestion_model.find({
+    testBuilderId: updatedTestBuilder._id.toString(),
+  });
+  testBuilder.questions = testQuestions;
 
   successMessage(200, res, "Test Builder updated successfully", {
     updatedTestBuilder,
