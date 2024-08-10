@@ -30,6 +30,7 @@ const createTestBuilder = catchAsync(async (req, res, next) => {
     testName: value.testName,
     testTime: value.testTime,
   });
+
   value.questions = value.questions.map((testQuestion) => {
     return {
       employerId: req.user.id,
@@ -40,9 +41,10 @@ const createTestBuilder = catchAsync(async (req, res, next) => {
   const createdTestQuestions = await testQuestion_model.insertMany(
     value.questions
   );
+
   successMessage(202, res, "Test created successfully", {
-    ...createdTestBuilder,
-    questions: createdTestQuestions,
+    ...JSON.parse(JSON.stringify(createdTestBuilder)),
+    questions: JSON.parse(JSON.stringify(createdTestQuestions)),
   });
 });
 
