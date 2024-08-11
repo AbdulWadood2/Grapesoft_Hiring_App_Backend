@@ -137,13 +137,17 @@ const getJobs = catchAsync(async (req, res, next) => {
     .find({ employerId: req.user.id })
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 }); // Assuming you want the newest jobs first
+    .sort({ createdAt: -1 })
+    .lean(); // Assuming you want the newest jobs first
 
   // Get the total number of jobs to calculate the total pages
   const totalJobs = await job_model.countDocuments({ employerId: req.user.id });
   const totalPages = Math.ceil(totalJobs / limit);
   jobs = await Promise.all(
     jobs.map(async (job) => {
+      job.applications = 2;
+      job.testCompleted = 1;
+      job.contractSigned = 3;
       [job.specification.video] = await generateSignedUrl([
         job.specification.video,
       ]);
