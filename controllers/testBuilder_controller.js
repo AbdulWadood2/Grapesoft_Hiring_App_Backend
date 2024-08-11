@@ -15,6 +15,7 @@ const {
   testBuilder_addQuestion_validation,
   testBuilder_editQuestion_validation,
 } = require("../validation/testBuilder_joi_validation");
+const { boolean } = require("joi");
 
 // method post
 // endPoint /api/v1/testBuilder
@@ -54,37 +55,47 @@ const createTestBuilder = catchAsync(async (req, res, next) => {
 const getAllTestBuilders = catchAsync(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
-  const skip = (page - 1) * limit;
+  const infinity = req.query.infinity;
+  if (infinity !== "true") {
+    const skip = (page - 1) * limit;
 
-  let testBuilders = await testBuilder_model
-    .find({ employerId: req.user.id })
-    .skip(skip)
-    .limit(limit)
-    .sort({ createdAt: -1 })
-    .lean();
+    let testBuilders = await testBuilder_model
+      .find({ employerId: req.user.id })
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean();
 
-  testBuilders = await Promise.all(
-    testBuilders.map(async (test) => {
-      const testQuestions = await testQuestion_model.find({
-        testBuilderId: test._id.toString(),
-      });
-      test.questions = testQuestions;
-      return test;
-    })
-  );
+    testBuilders = await Promise.all(
+      testBuilders.map(async (test) => {
+        const testQuestions = await testQuestion_model.find({
+          testBuilderId: test._id.toString(),
+        });
+        test.questions = testQuestions;
+        return test;
+      })
+    );
 
-  const totalTestBuilders = await testBuilder_model.countDocuments({
-    employerId: req.user.id,
-  });
+    const totalTestBuilders = await testBuilder_model.countDocuments({
+      employerId: req.user.id,
+    });
 
-  successMessage(200, res, "Test Builders fetched successfully", {
-    testBuilders,
-    pagination: {
-      currentPage: Number(page),
-      totalPages: Math.ceil(totalTestBuilders / limit),
-      totalJobs: totalTestBuilders,
-    },
-  });
+    return successMessage(200, res, "Test Builders fetched successfully", {
+      testBuilders,
+      pagination: {
+        currentPage: Number(page),
+        totalPages: Math.ceil(totalTestBuilders / limit),
+        totalJobs: totalTestBuilders,
+      },
+    });
+  } else {
+    let testBuilders = await testBuilder_model.find({
+      employerId: req.user.id,
+    });
+    return successMessage(200, res, "Test Builders fetched successfully", {
+      testBuilders,
+    });
+  }
 });
 
 // method get

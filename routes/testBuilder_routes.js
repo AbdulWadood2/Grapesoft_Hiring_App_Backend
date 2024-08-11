@@ -98,6 +98,12 @@ route.post("/", verifyToken([employer_model]), createTestBuilder);
  *           type: integer
  *           example: 10
  *         description: The number of test builders to fetch per page.
+ *       - in: query
+ *         name: infinity
+ *         schema:
+ *           type: boolean
+ *           example: false
+ *         description: The number of test builders to fetch per page.
  *     responses:
  *       200:
  *         description: A list of test builders and pagination information.
