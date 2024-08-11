@@ -68,9 +68,13 @@ const getAllTestBuilders = catchAsync(async (req, res, next) => {
 
     testBuilders = await Promise.all(
       testBuilders.map(async (test) => {
-        const testQuestions = await testQuestion_model.find({
-          testBuilderId: test._id.toString(),
-        });
+        const testQuestions = await testQuestion_model
+          .find({
+            testBuilderId: test._id.toString(),
+          })
+          .sort({
+            createdAt: -1,
+          });
         test.questions = testQuestions;
         return test;
       })
@@ -114,9 +118,13 @@ const getTestBuilderById = catchAsync(async (req, res, next) => {
   if (!testBuilder) {
     return next(new appError("Test Builder not found", 400));
   }
-  const testQuestions = await testQuestion_model.find({
-    testBuilderId: testBuilder._id.toString(),
-  });
+  const testQuestions = await testQuestion_model
+    .find({
+      testBuilderId: testBuilder._id.toString(),
+    })
+    .sort({
+      createdAt: -1,
+    });
   testBuilder.questions = testQuestions;
 
   successMessage(200, res, "Test Builder fetched successfully", {
@@ -136,11 +144,11 @@ const updateTestBuilder = catchAsync(async (req, res, next) => {
     return next(new appError(errors, 400));
   }
 
-  const updatedTestBuilder = await testBuilder_model.findOneAndUpdate(
-    { _id: id, employerId: req.user.id },
-    value,
-    { new: true }
-  );
+  const updatedTestBuilder = await testBuilder_model
+    .findOneAndUpdate({ _id: id, employerId: req.user.id }, value, {
+      new: true,
+    })
+    .lean();
 
   if (!updatedTestBuilder) {
     return next(new appError("Test Builder not found", 400));
@@ -148,10 +156,10 @@ const updateTestBuilder = catchAsync(async (req, res, next) => {
   const testQuestions = await testQuestion_model.find({
     testBuilderId: updatedTestBuilder._id.toString(),
   });
-  testBuilder.questions = testQuestions;
+  updatedTestBuilder.questions = testQuestions;
 
   successMessage(200, res, "Test Builder updated successfully", {
-    updatedTestBuilder,
+    ...updatedTestBuilder,
   });
 });
 
@@ -203,7 +211,6 @@ const addQuestion = catchAsync(async (req, res, next) => {
       ...testQuestion,
     };
   });
-  console.log(value.questions);
   const createdTestQuestions = await testQuestion_model.insertMany(
     value.questions
   );
