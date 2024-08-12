@@ -60,7 +60,6 @@ module.exports = class ForgetPasswordEmail {
     });
   }
   async send() {
-    console.log(this.to);
     const mailOptions = {
       from: "Grapesoft inteview app",
       to: this.to,

@@ -59,15 +59,13 @@ const jobValidationSchema = Joi.object({
   }).required(),
   contract: Joi.object({
     title: Joi.string().required(),
-    video: Joi.string()
+    docs: Joi.string()
       .required()
       .custom((value, helpers) =>
-        validateExtension(value, helpers, validVideoExtensions)
+        validateExtension(value, helpers, validDocExtensions)
       )
       .messages({
-        "any.invalid": `Allowed file types: ${validVideoExtensions.join(
-          ", "
-        )}.`,
+        "any.invalid": `Allowed file types: ${validDocExtensions.join(", ")}.`,
       }),
   }).required(),
   status: Joi.boolean().default(true),
@@ -76,6 +74,8 @@ const jobValidationSchema = Joi.object({
   coverLetter: Joi.boolean().default(true),
   cv: Joi.boolean().default(true),
   aboutVideo: Joi.boolean().default(true),
+}).options({
+  abortEarly: false,
 });
 
 module.exports = {

@@ -19,7 +19,7 @@ const jobSchema = new mongoose.Schema(
     },
     contract: {
       title: { type: String, required: true },
-      video: { type: String, required: true },
+      docs: { type: String, required: true },
     },
     testBuilderId: { type: mongoose.Schema.Types.ObjectId, default: null },
     status: {

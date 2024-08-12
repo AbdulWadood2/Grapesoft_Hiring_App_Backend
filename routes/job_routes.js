@@ -82,11 +82,11 @@ const route = express.Router();
  *                     type: string
  *                     example: "Contract Material"
  *                     description: "Title of the contract material."
- *                   video:
+ *                   docs:
  *                     type: string
  *                     format: uri
- *                     example: "https://example.com/contract_video.mp4"
- *                     description: "URI for the contract video."
+ *                     example: "https://example.com/contract_pdf.pdf"
+ *                     description: "URI for the contract pdf."
  *               testBuilderId:
  *                 type: string
  *                 example: "60d9f8f5d5f9c6001c8e4f2a"
@@ -226,10 +226,10 @@ route.get("/:id", verifyToken([employer_model]), getJobById);
  *                     type: string
  *                     example: "Training Material"
  *                     description: "Title of the training material."
- *                   video:
+ *                   docs:
  *                     type: string
- *                     description: Filename of the contract video
- *                     example: contract-video.mp4
+ *                     example: "https://example.com/contract_pdf.pdf"
+ *                     description: "URI for the contract pdf."
  *               testBuilderId:
  *                  type: string
  *                  example: "60d9f8f5d5f9c6001c8e4f2a"
