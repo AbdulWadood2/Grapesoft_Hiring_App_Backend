@@ -156,7 +156,7 @@ const getJobs = catchAsync(async (req, res, next) => {
       ]);
       [job.training.video] = await generateSignedUrl([job.training.video]);
       [job.training.docs] = await generateSignedUrl([job.training.docs]);
-      [job.contract.video] = await generateSignedUrl([job.contract.video]);
+      [job.contract.docs] = await generateSignedUrl([job.contract.docs]);
       return job;
     })
   );
@@ -189,6 +189,9 @@ const getJobById = catchAsync(async (req, res, next) => {
   [job.training.video] = await generateSignedUrl([job.training.video]);
   [job.training.docs] = await generateSignedUrl([job.training.docs]);
   [job.contract.video] = await generateSignedUrl([job.contract.video]);
+  job.applications = 2;
+  job.testCompleted = 1;
+  job.contractSigned = 3;
   return successMessage(202, res, `job fetched successfully`, job);
 });
 
@@ -322,6 +325,9 @@ const editJob = catchAsync(async (req, res, next) => {
   [job.training.video] = await generateSignedUrl([job.training.video]);
   [job.training.docs] = await generateSignedUrl([job.training.docs]);
   [job.contract.docs] = await generateSignedUrl([job.contract.docs]);
+  job.applications = 2;
+  job.testCompleted = 1;
+  job.contractSigned = 3;
   return successMessage(202, res, `job updated successfully`, job);
 });
 
