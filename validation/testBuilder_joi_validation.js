@@ -12,7 +12,7 @@ const testBuilder_create_validation = Joi.object({
           .try(
             Joi.when("type", {
               is: 1,
-              then: Joi.array().items(Joi.string()).required(),
+              then: Joi.array().min(2).items(Joi.string()).required(),
               otherwise: Joi.valid(null),
             })
           )
@@ -60,7 +60,7 @@ const testBuilder_addQuestion_validation = Joi.object({
           .try(
             Joi.when("type", {
               is: 1,
-              then: Joi.array().items(Joi.string()).required(),
+              then: Joi.array().min(2).items(Joi.string()).required(),
               otherwise: Joi.valid(null),
             })
           )
@@ -97,7 +97,7 @@ const testBuilder_editQuestion_validation = Joi.object({
     .try(
       Joi.when("type", {
         is: 1,
-        then: Joi.array().items(Joi.string()).required(),
+        then: Joi.array().min(2).items(Joi.string()).required(),
         otherwise: Joi.valid(null),
       })
     )
