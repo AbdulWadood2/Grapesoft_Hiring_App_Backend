@@ -1,9 +1,5 @@
 // catchAsync
 const catchAsync = require("../errorHandlers/catchAsync");
-// path node package
-const path = require("path");
-// clsx node package for readig csv files
-const xlsx = require("xlsx");
 
 // appError
 const appError = require("../errorHandlers/appError");

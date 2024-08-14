@@ -5,6 +5,8 @@ const {
   getJobById,
   editJob,
   deleteJob,
+  createJobDraft,
+  getJobDraft,
 } = require("../controllers/job_controller");
 const employer_model = require("../models/employer_model");
 const { verifyToken } = require("../authorization/verifyToken");
@@ -282,5 +284,118 @@ route.put("/:id", verifyToken([employer_model]), editJob);
  *         description: Job deleted successfully.
  */
 route.delete("/:id", verifyToken([employer_model]), deleteJob);
+
+/**
+ * @swagger
+ * /api/v1/job/draft:
+ *   post:
+ *     summary: Create a new draft
+ *     tags:
+ *       - Employer/Jobs
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 default: null
+ *                 example: null
+ *                 description: "Title of the job position."
+ *               specification:
+ *                 type: object
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                     default: null
+ *                     example: null
+ *                     description: "Title of the job specification."
+ *                   video:
+ *                     type: string
+ *                     default: null
+ *                     format: uri
+ *                     example: null
+ *                     description: "URI for the specification video."
+ *                   docs:
+ *                     type: string
+ *                     default: null
+ *                     format: uri
+ *                     example: null
+ *                     description: "URI for the specification documents."
+ *               training:
+ *                 type: object
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                     default: null
+ *                     example: null
+ *                     description: "Title of the training material."
+ *                   video:
+ *                     type: string
+ *                     default: null
+ *                     format: uri
+ *                     example: null
+ *                     description: "URI for the training video."
+ *                   docs:
+ *                     type: string
+ *                     default: null
+ *                     format: uri
+ *                     example: null
+ *                     description: "URI for the training documents."
+ *               contract:
+ *                 type: object
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                     default: null
+ *                     example: null
+ *                     description: "Title of the contract material."
+ *                   docs:
+ *                     type: string
+ *                     default: null
+ *                     format: uri
+ *                     example: null
+ *                     description: "URI for the contract pdf."
+ *               testBuilderId:
+ *                 type: string
+ *                 default: null
+ *                 example: null
+ *                 description: "ID of the associated test builder."
+ *               coverLetter:
+ *                 type: boolean
+ *                 default: null
+ *                 description: "Indicates if a cover letter is required."
+ *               cv:
+ *                 type: boolean
+ *                 default: null
+ *                 description: "Indicates if a CV is required."
+ *               aboutVideo:
+ *                 type: boolean
+ *                 default: null
+ *                 description: "Indicates if an 'about' video is required."
+ *     responses:
+ *       202:
+ *         description: Job created successfully
+ */
+route.post("/draft", verifyToken([employer_model]), createJobDraft);
+
+/**
+ * @swagger
+ * /api/v1/job/getDraft/:
+ *   post:
+ *     summary: Get a jobDraft
+ *     description: Fetch draft
+ *     tags:
+ *       - Employer/Jobs
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       202:
+ *         description: Job fetched successfully.
+ */
+route.post("/getDraft", verifyToken([employer_model]), getJobDraft);
 
 module.exports = route;

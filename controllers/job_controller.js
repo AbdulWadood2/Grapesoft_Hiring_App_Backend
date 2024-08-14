@@ -1,14 +1,11 @@
 // catchAsync
 const catchAsync = require("../errorHandlers/catchAsync");
-// path node package
-const path = require("path");
-// clsx node package for readig csv files
-const xlsx = require("xlsx");
 
 // appError
 const appError = require("../errorHandlers/appError");
 // model
 const job_model = require("../models/job_model.js");
+const jobdraft_model = require("../models/jobDraft_model.js");
 const textBuilder_model = require("../models/testBuilder_model.js");
 // sign access token
 const {
@@ -17,11 +14,10 @@ const {
 // successMessage
 const { successMessage } = require("../successHandlers/successController");
 // joi validation
-const { jobValidationSchema } = require("../validation/job_joi_validation.js");
-// crypto.js
-const CryptoJS = require("crypto-js");
-// models
-const job = require("../models/job_model");
+const {
+  jobValidationSchema,
+  jobDraftValidationSchema,
+} = require("../validation/job_joi_validation.js");
 // gererate signed url
 const { generateSignedUrl } = require("./awsController");
 const {
@@ -35,6 +31,26 @@ const {
 // description  create job
 const createJob = catchAsync(async (req, res, next) => {
   const { value, error } = jobValidationSchema.validate(req.body);
+  // Handle each file separately with null checks
+  value.specification.video = value.specification.video
+    ? (await getFileName([value.specification.video]))[0]
+    : null;
+
+  value.specification.docs = value.specification.docs
+    ? (await getFileName([value.specification.docs]))[0]
+    : null;
+
+  value.training.video = value.training.video
+    ? (await getFileName([value.training.video]))[0]
+    : null;
+
+  value.training.docs = value.training.docs
+    ? (await getFileName([value.training.docs]))[0]
+    : null;
+
+  value.contract.docs = value.contract.docs
+    ? (await getFileName([value.contract.docs]))[0]
+    : null;
   if (error) {
     const errors = error.details.map((err) => err.message).join(", ");
     return next(new appError(errors, 400));
@@ -113,14 +129,10 @@ const createJob = catchAsync(async (req, res, next) => {
   [newJob.training.video] = await generateSignedUrl([newJob.training.video]);
   [newJob.training.docs] = await generateSignedUrl([newJob.training.docs]);
   [newJob.contract.docs] = await generateSignedUrl([newJob.contract.docs]);
-  return successMessage(
-    202,
-    res,
-    `
-    Job created successfully
-    `,
-    newJob
-  );
+  successMessage(202, res, "Job created successfully", newJob);
+  await jobdraft_model.deleteOne({
+    employerId: req.user.id,
+  });
 });
 
 // method GET
@@ -346,4 +358,258 @@ const deleteJob = catchAsync(async (req, res, next) => {
   return successMessage(202, res, `job deleted successfully`);
 });
 
-module.exports = { createJob, getJobs, getJobById, editJob, deleteJob };
+// method POST
+// endPoint /api/v1/job/draft
+// description create or edit job draft
+const createJobDraft = catchAsync(async (req, res, next) => {
+  const { value, error } = jobDraftValidationSchema.validate(req.body);
+  // Handle each file separately with null checks
+  value.specification.video = value.specification.video
+    ? (await getFileName([value.specification.video]))[0]
+    : null;
+
+  value.specification.docs = value.specification.docs
+    ? (await getFileName([value.specification.docs]))[0]
+    : null;
+
+  value.training.video = value.training.video
+    ? (await getFileName([value.training.video]))[0]
+    : null;
+
+  value.training.docs = value.training.docs
+    ? (await getFileName([value.training.docs]))[0]
+    : null;
+
+  value.contract.docs = value.contract.docs
+    ? (await getFileName([value.contract.docs]))[0]
+    : null;
+
+  if (error) {
+    const errors = error.details.map((err) => err.message).join(", ");
+    return next(new appError(errors, 400));
+  }
+  const checks = [];
+
+  if (value.specification.video) {
+    checks.push(
+      checkDuplicateAwsImgsInRecords([value.specification.video]),
+      checkImageExists([value.specification.video])
+    );
+  }
+
+  if (value.specification.docs) {
+    checks.push(
+      checkDuplicateAwsImgsInRecords([value.specification.docs]),
+      checkImageExists([value.specification.docs])
+    );
+  }
+
+  if (value.training.video) {
+    checks.push(
+      checkDuplicateAwsImgsInRecords([value.training.video]),
+      checkImageExists([value.training.video])
+    );
+  }
+
+  if (value.training.docs) {
+    checks.push(
+      checkDuplicateAwsImgsInRecords([value.training.docs]),
+      checkImageExists([value.training.docs])
+    );
+  }
+
+  if (value.contract.docs) {
+    checks.push(
+      checkDuplicateAwsImgsInRecords([value.contract.docs]),
+      checkImageExists([value.contract.docs])
+    );
+  }
+
+  const results = await Promise.all(checks);
+
+  let resultIndex = 0;
+
+  if (value.specification.video) {
+    const [isSpecificationVideoValid, isSpecificationVideoExist] =
+      results.slice(resultIndex, resultIndex + 2);
+    resultIndex += 2;
+
+    if (!isSpecificationVideoValid.success) {
+      return next(new appError("Video specification is already used", 400));
+    }
+    if (!isSpecificationVideoExist) {
+      return next(new appError("Video specification does not exist", 400));
+    }
+  }
+
+  if (value.specification.docs) {
+    const [isSpecificationDocsValid, isSpecificationDocsExist] = results.slice(
+      resultIndex,
+      resultIndex + 2
+    );
+    resultIndex += 2;
+
+    if (!isSpecificationDocsValid.success) {
+      return next(new appError("Docs specification is already used", 400));
+    }
+    if (!isSpecificationDocsExist) {
+      return next(new appError("Docs specification does not exist", 400));
+    }
+  }
+
+  if (value.training.video) {
+    const [isTrainingVideoValid, isTrainingVideoExist] = results.slice(
+      resultIndex,
+      resultIndex + 2
+    );
+    resultIndex += 2;
+
+    if (!isTrainingVideoValid.success) {
+      return next(new appError("Video training is already used", 400));
+    }
+    if (!isTrainingVideoExist) {
+      return next(new appError("Video training does not exist", 400));
+    }
+  }
+
+  if (value.training.docs) {
+    const [isTrainingDocsValid, isTrainingDocsExist] = results.slice(
+      resultIndex,
+      resultIndex + 2
+    );
+    resultIndex += 2;
+
+    if (!isTrainingDocsValid.success) {
+      return next(new appError("Docs training is already used", 400));
+    }
+    if (!isTrainingDocsExist) {
+      return next(new appError("Docs training does not exist", 400));
+    }
+  }
+
+  if (value.contract.docs) {
+    const [isContractPdfValid, isContractPdfExist] = results.slice(
+      resultIndex,
+      resultIndex + 2
+    );
+
+    if (!isContractPdfValid.success) {
+      return next(new appError("Contract PDF is already used", 400));
+    }
+    if (!isContractPdfExist) {
+      return next(new appError("Contract PDF does not exist", 400));
+    }
+  }
+
+  if (value.testBuilderId) {
+    const testBuilder = await textBuilder_model.findOne({
+      _id: value.testBuilderId,
+    });
+    if (!testBuilder) {
+      return next(new appError("Test builder not found", 400));
+    }
+  }
+
+  let newJobDraft = await jobdraft_model.findOneAndUpdate(
+    {
+      employerId: req.user.id,
+    },
+    {
+      ...value,
+    },
+    {
+      new: true,
+    }
+  );
+  if (!newJobDraft) {
+    newJobDraft = await jobdraft_model.create({
+      employerId: req.user.id,
+      ...value,
+    });
+  }
+
+  if (newJobDraft.specification.video) {
+    [newJobDraft.specification.video] = await generateSignedUrl([
+      newJobDraft.specification.video,
+    ]);
+  }
+
+  if (newJobDraft.specification.docs) {
+    [newJobDraft.specification.docs] = await generateSignedUrl([
+      newJobDraft.specification.docs,
+    ]);
+  }
+
+  if (newJobDraft.training.video) {
+    [newJobDraft.training.video] = await generateSignedUrl([
+      newJobDraft.training.video,
+    ]);
+  }
+
+  if (newJobDraft.training.docs) {
+    [newJobDraft.training.docs] = await generateSignedUrl([
+      newJobDraft.training.docs,
+    ]);
+  }
+
+  if (newJobDraft.contract.docs) {
+    [newJobDraft.contract.docs] = await generateSignedUrl([
+      newJobDraft.contract.docs,
+    ]);
+  }
+
+  return successMessage(202, res, "Job draft successfully", newJobDraft);
+});
+
+// method POST
+// endPoint /api/v1/job/getDraft/
+// description get job draft
+const getJobDraft = catchAsync(async (req, res, next) => {
+  const jobDraft = await jobdraft_model.findOne({
+    employerId: req.user.id,
+  });
+  if (!jobDraft) {
+    return next(new appError(`no jobDraft`, 400));
+  }
+
+  if (jobDraft.specification.video) {
+    [jobDraft.specification.video] = await generateSignedUrl([
+      jobDraft.specification.video,
+    ]);
+  }
+
+  if (jobDraft.specification.docs) {
+    [jobDraft.specification.docs] = await generateSignedUrl([
+      jobDraft.specification.docs,
+    ]);
+  }
+
+  if (jobDraft.training.video) {
+    [jobDraft.training.video] = await generateSignedUrl([
+      jobDraft.training.video,
+    ]);
+  }
+
+  if (jobDraft.training.docs) {
+    [jobDraft.training.docs] = await generateSignedUrl([
+      jobDraft.training.docs,
+    ]);
+  }
+
+  if (jobDraft.contract.docs) {
+    [jobDraft.contract.docs] = await generateSignedUrl([
+      jobDraft.contract.docs,
+    ]);
+  }
+  return successMessage(202, res, `jobDraft fetched successfully`, jobDraft);
+});
+
+module.exports = {
+  createJob,
+  getJobs,
+  getJobById,
+  editJob,
+  deleteJob,
+  createJobDraft,
+  getJobDraft,
+};

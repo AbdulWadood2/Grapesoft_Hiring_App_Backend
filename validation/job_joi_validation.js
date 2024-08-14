@@ -12,7 +12,7 @@ const validateExtension = (value, helpers, validExtensions) => {
   }
   return value;
 };
-
+// job create edit
 const jobValidationSchema = Joi.object({
   title: Joi.string().required(),
   specification: Joi.object({
@@ -77,7 +77,76 @@ const jobValidationSchema = Joi.object({
 }).options({
   abortEarly: false,
 });
+// job draft
+const jobDraftValidationSchema = Joi.object({
+  title: Joi.string().allow(null, ""),
+  specification: Joi.object({
+    title: Joi.string().allow(null, ""),
+    video: Joi.string()
+      .allow(null, "")
+
+      .custom((value, helpers) =>
+        validateExtension(value, helpers, validVideoExtensions)
+      )
+      .messages({
+        "any.invalid": `Allowed file types: ${validVideoExtensions.join(
+          ", "
+        )}.`,
+      }),
+    docs: Joi.string()
+      .allow(null, "")
+
+      .custom((value, helpers) =>
+        validateExtension(value, helpers, validDocExtensions)
+      )
+      .messages({
+        "any.invalid": `Allowed file types: ${validDocExtensions.join(", ")}.`,
+      }),
+  }),
+  training: Joi.object({
+    title: Joi.string().allow(null, ""),
+    video: Joi.string()
+      .allow(null, "")
+
+      .custom((value, helpers) =>
+        validateExtension(value, helpers, validVideoExtensions)
+      )
+      .messages({
+        "any.invalid": `Allowed file types: ${validVideoExtensions.join(
+          ", "
+        )}.`,
+      }),
+    docs: Joi.string()
+      .allow(null, "")
+
+      .custom((value, helpers) =>
+        validateExtension(value, helpers, validDocExtensions)
+      )
+      .messages({
+        "any.invalid": `Allowed file types: ${validDocExtensions.join(", ")}.`,
+      }),
+  }),
+  contract: Joi.object({
+    title: Joi.string().allow(null, ""),
+    docs: Joi.string()
+      .allow(null, "")
+
+      .custom((value, helpers) =>
+        validateExtension(value, helpers, validDocExtensions)
+      )
+      .messages({
+        "any.invalid": `Allowed file types: ${validDocExtensions.join(", ")}.`,
+      }),
+  }),
+  testBuilderId: objectId.allow(null),
+  coverLetter: Joi.boolean().allow(null, ""),
+  cv: Joi.boolean().allow(null, ""),
+  aboutVideo: Joi.boolean().allow(null, ""),
+}).options({
+  abortEarly: false,
+});
 
 module.exports = {
   jobValidationSchema,
+  jobDraftValidationSchema,
 };

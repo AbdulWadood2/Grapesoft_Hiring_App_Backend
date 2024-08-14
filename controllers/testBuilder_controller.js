@@ -6,6 +6,7 @@ const appError = require("../errorHandlers/appError");
 const testBuilder_model = require("../models/testBuilder_model");
 const testQuestion_model = require("../models/testQuestion_model");
 const job_model = require("../models/job_model");
+const jobdraft_model = require("../models/jobDraft_model.js");
 // successMessage
 const { successMessage } = require("../successHandlers/successController");
 // joi validation
@@ -182,8 +183,13 @@ const deleteTestBuilder = catchAsync(async (req, res, next) => {
 
   // Optional: Also delete associated test questions
   await testQuestion_model.deleteMany({ testBuilderId: id });
+
   // Set testBuilderId to null in the job model where it matches the deleted testBuilderId
   await job_model.updateMany({ testBuilderId: id }, { testBuilderId: null });
+  await jobdraft_model.updateMany(
+    { testBuilderId: id },
+    { testBuilderId: null }
+  );
 });
 
 // method POST
