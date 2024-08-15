@@ -169,7 +169,14 @@ const updateTestBuilder = catchAsync(async (req, res, next) => {
 // description Delete a test builder by ID
 const deleteTestBuilder = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-
+  const jobs = await job_model.find({
+    testBuilderId: id,
+  });
+  if (jobs.length > 0) {
+    return next(
+      new appError("Cannot delete test builder with existing jobs", 400)
+    );
+  }
   const deletedTestBuilder = await testBuilder_model.findOneAndDelete({
     _id: id,
     employerId: req.user.id,

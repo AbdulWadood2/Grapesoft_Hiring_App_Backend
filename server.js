@@ -11,7 +11,11 @@ const job_routes = require("./routes/job_routes.js");
 const app = express();
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://192.168.0.173:3000"],
+    origin: [
+      "https://grapesofthrinterviewapp.mantiqsoft.com",
+      "http://localhost:3000",
+      "http://192.168.0.173:3000",
+    ],
     credentials: true,
   })
 );
