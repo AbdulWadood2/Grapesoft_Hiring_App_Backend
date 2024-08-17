@@ -5,7 +5,7 @@ const employerValidationSchema = Joi.object({
   last_name: Joi.string().min(1).required(),
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
-  company_name: Joi.string().required(),
+  company_name: Joi.string().allow(null),
 }).options({
   abortEarly: false,
 });

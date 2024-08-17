@@ -8,6 +8,15 @@ const testBuilder_create_validation = Joi.object({
       Joi.object({
         type: Joi.number().integer().valid(0, 1, 2).required(),
         questionText: Joi.string().required(),
+        wordLimit: Joi.alternatives()
+          .try(
+            Joi.when("type", {
+              is: 1,
+              then: Joi.number().integer().required(),
+              otherwise: Joi.valid(null),
+            })
+          )
+          .allow(null),
         options: Joi.alternatives()
           .try(
             Joi.when("type", {
@@ -56,6 +65,15 @@ const testBuilder_addQuestion_validation = Joi.object({
       Joi.object({
         type: Joi.number().integer().valid(0, 1, 2).required(),
         questionText: Joi.string().required(),
+        wordLimit: Joi.alternatives()
+          .try(
+            Joi.when("type", {
+              is: 0,
+              then: Joi.number().integer().required(),
+              otherwise: Joi.valid(null),
+            })
+          )
+          .allow(null),
         options: Joi.alternatives()
           .try(
             Joi.when("type", {
@@ -93,6 +111,15 @@ const testBuilder_addQuestion_validation = Joi.object({
 const testBuilder_editQuestion_validation = Joi.object({
   type: Joi.number().integer().valid(0, 1, 2).required(),
   questionText: Joi.string().required(),
+  wordLimit: Joi.alternatives()
+    .try(
+      Joi.when("type", {
+        is: 0,
+        then: Joi.number().integer().required(),
+        otherwise: Joi.valid(null),
+      })
+    )
+    .allow(null),
   options: Joi.alternatives()
     .try(
       Joi.when("type", {

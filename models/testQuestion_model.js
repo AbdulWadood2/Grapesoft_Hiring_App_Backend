@@ -13,6 +13,10 @@ const testSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    wordLimit: {
+      type: Number,
+      default: 1,
+    },
     options: {
       type: [String],
       default: null,
