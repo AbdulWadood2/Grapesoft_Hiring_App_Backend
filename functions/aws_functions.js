@@ -21,12 +21,13 @@ const s3 = new S3Client({
 // models
 const employer_model = require("../models/employer_model.js");
 const job_model = require("../models/job_model.js");
+const helpguideemployer_model = require("../models/help&guideEmployer_model.js");
 
 // functions
 const checkDuplicateAwsImgsInRecords = async (fileNames, fieldName) => {
   try {
     const promises = fileNames.map(async (fileName) => {
-      const [employerAvatar, job] = await Promise.all([
+      const [employerAvatar, job, helpguideemployer] = await Promise.all([
         employer_model.findOne({ avatar: fileName }),
         job_model.findOne({
           $or: [
@@ -37,8 +38,11 @@ const checkDuplicateAwsImgsInRecords = async (fileNames, fieldName) => {
             { "contract.video": fileName },
           ],
         }),
+        helpguideemployer_model.findOne({
+          video: fileName,
+        }),
       ]);
-      if (employerAvatar || job) {
+      if (employerAvatar || job || helpguideemployer) {
         return fileName;
       }
     });
