@@ -6,7 +6,10 @@ const {
   deleteHelpGuideEmployer,
   editHelpGuideEmployerSort,
 } = require("../controllers/help&guideEmployer_controller");
+// models
 const employer_model = require("../models/employer_model");
+const admin_model = require("../models/admin_model");
+// verify
 const { verifyToken } = require("../authorization/verifyToken");
 const route = express.Router();
 
@@ -17,7 +20,7 @@ const route = express.Router();
  *     summary: Create employer help and guide
  *     description: Create a new employer help and guide entry.
  *     tags:
- *       - Employer/HelpGuideEmployer
+ *       - Admin/HelpGuideEmployer
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -41,7 +44,7 @@ const route = express.Router();
  *       202:
  *         description: Help and guide created successfully.
  */
-route.post("/", verifyToken([employer_model]), createHelpGuideEmployer);
+route.post("/", verifyToken([admin_model]), createHelpGuideEmployer);
 
 /**
  * @swagger
@@ -51,13 +54,18 @@ route.post("/", verifyToken([employer_model]), createHelpGuideEmployer);
  *     description: Retrieve all employer help and guide entries, sorted by their sort value.
  *     tags:
  *       - Employer/HelpGuideEmployer
+ *       - Admin/HelpGuideEmployer
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Successfully retrieved all help and guide questionnaires.
  */
-route.get("/", verifyToken([employer_model]), getAllHelpGuideEmployers);
+route.get(
+  "/",
+  verifyToken([employer_model, admin_model]),
+  getAllHelpGuideEmployers
+);
 
 /**
  * @swagger
@@ -66,7 +74,7 @@ route.get("/", verifyToken([employer_model]), getAllHelpGuideEmployers);
  *     summary: Edit employer help and guide
  *     description: Edit an existing employer help and guide entry.
  *     tags:
- *       - Employer/HelpGuideEmployer
+ *       - Admin/HelpGuideEmployer
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -94,7 +102,7 @@ route.get("/", verifyToken([employer_model]), getAllHelpGuideEmployers);
  *       200:
  *         description: Help and guide updated successfully.
  */
-route.put("/:id", verifyToken([employer_model]), editHelpGuideEmployer);
+route.put("/:id", verifyToken([admin_model]), editHelpGuideEmployer);
 
 /**
  * @swagger
@@ -103,7 +111,7 @@ route.put("/:id", verifyToken([employer_model]), editHelpGuideEmployer);
  *     summary: Delete employer help and guide
  *     description: Delete an existing employer help and guide entry.
  *     tags:
- *       - Employer/HelpGuideEmployer
+ *       - Admin/HelpGuideEmployer
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -117,7 +125,7 @@ route.put("/:id", verifyToken([employer_model]), editHelpGuideEmployer);
  *       204:
  *         description: Help and guide deleted successfully.
  */
-route.delete("/:id", verifyToken([employer_model]), deleteHelpGuideEmployer);
+route.delete("/:id", verifyToken([admin_model]), deleteHelpGuideEmployer);
 
 /**
  * @swagger
@@ -126,7 +134,9 @@ route.delete("/:id", verifyToken([employer_model]), deleteHelpGuideEmployer);
  *     summary: Edit employer help and guide sort order
  *     description: Update the sort order of an existing employer help and guide entry.
  *     tags:
- *       - HelpGuideEmployer
+ *       - Admin/HelpGuideEmployer
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -147,6 +157,6 @@ route.delete("/:id", verifyToken([employer_model]), deleteHelpGuideEmployer);
  *       200:
  *         description: Sort order updated successfully.
  */
-route.put("/:id", verifyToken([employer_model]), editHelpGuideEmployerSort);
+route.put("/sort/:id", verifyToken([admin_model]), editHelpGuideEmployerSort);
 
 module.exports = route;

@@ -12,6 +12,7 @@ const {
   getFileName,
 } = require("../functions/aws_functions");
 const { generateSignedUrl } = require("./awsController");
+const { successMessage } = require("../successHandlers/successController");
 
 // method post
 // endPoint /api/v1/helpguideemployer/
@@ -23,15 +24,17 @@ const createHelpGuideEmployer = catchAsync(async (req, res, next) => {
     return next(new AppError(errors, 400));
   }
   const helpguideEmployerCount = await helpguideEmployer_model.countDocuments();
-  const isImageExists = checkImageExists([helpguideEmployerCount.video]);
-  if (!isImageExists) {
-    return next(new appError("Video does not exist", 400));
-  }
-  const imageAlreadyUsed = checkDuplicateAwsImgsInRecords([
-    helpguideEmployerCount.video,
-  ]);
-  if (!imageAlreadyUsed.success) {
-    return next(new appError("Video is already used", 400));
+  if (value.video) {
+    const [isImageExists] = await checkImageExists([value.video]);
+    if (!isImageExists) {
+      return next(new appError("Video does not exist", 400));
+    }
+    const imageAlreadyUsed = await checkDuplicateAwsImgsInRecords([
+      value.video,
+    ]);
+    if (!imageAlreadyUsed.success) {
+      return next(new appError("Video is already used", 400));
+    }
   }
   const helpguideEmployerCreated = await helpguideEmployer_model.create({
     ...value,
@@ -54,9 +57,16 @@ const createHelpGuideEmployer = catchAsync(async (req, res, next) => {
 // endPoint /api/v1/helpguideemployer/
 // description get employer help and guide
 const getAllHelpGuideEmployers = catchAsync(async (req, res, next) => {
-  const helpGuideEmployers = await helpguideEmployer_model
+  let helpGuideEmployers = await helpguideEmployer_model
     .find()
     .sort({ sort: 1 });
+  helpGuideEmployers = helpGuideEmployers.map(async (item) => {
+    if (item.video) {
+      [item.video] = await generateSignedUrl([item.video]);
+    }
+    return item;
+  });
+  helpGuideEmployers = await Promise.all(helpGuideEmployers);
   return successMessage(
     200,
     res,
@@ -83,21 +93,25 @@ const editHelpGuideEmployer = catchAsync(async (req, res, next) => {
   if (value.video) {
     if (helpAndguideEmployerExist.video) {
       if (value.video !== helpAndguideEmployerExist.video) {
-        const isImageExists = checkImageExists([value.video]);
+        const [isImageExists] = await checkImageExists([value.video]);
         if (!isImageExists) {
           return next(new appError("Video does not exist", 400));
         }
-        const imageAlreadyUsed = checkDuplicateAwsImgsInRecords([value.video]);
+        const imageAlreadyUsed = await checkDuplicateAwsImgsInRecords([
+          value.video,
+        ]);
         if (!imageAlreadyUsed.success) {
           return next(new appError("Video is already used", 400));
         }
       }
     } else {
-      const isImageExists = checkImageExists([value.video]);
+      const [isImageExists] = await checkImageExists([value.video]);
       if (!isImageExists) {
         return next(new appError("Video does not exist", 400));
       }
-      const imageAlreadyUsed = checkDuplicateAwsImgsInRecords([value.video]);
+      const imageAlreadyUsed = await checkDuplicateAwsImgsInRecords([
+        value.video,
+      ]);
       if (!imageAlreadyUsed.success) {
         return next(new appError("Video is already used", 400));
       }
@@ -134,10 +148,10 @@ const deleteHelpGuideEmployer = catchAsync(async (req, res, next) => {
   );
 
   if (!helpGuideEmployer) {
-    return next(new appError("No help and guide found with that ID", 404));
+    return next(new appError("No help and guide found with that ID", 400));
   }
 
-  return successMessage(204, res, "Help and guide deleted");
+  return successMessage(202, res, "Help and guide deleted");
 });
 
 // method edit
@@ -148,6 +162,9 @@ const editHelpGuideEmployerSort = catchAsync(async (req, res, next) => {
 
   if (sort === undefined) {
     return next(new appError("Sort value is required", 400));
+  }
+  if (sort === 0) {
+    return next(new appError("Sort value must be > 0", 400));
   }
 
   // Find the current item
@@ -161,26 +178,26 @@ const editHelpGuideEmployerSort = catchAsync(async (req, res, next) => {
   const currentSort = currentHelpGuideEmployer.sort;
 
   // If the new sort value is different from the current sort value
-  if (currentSort !== sort) {
-    // Increment sort value for items that need to move up
-    if (sort < currentSort) {
-      await helpguideEmployer_model.updateMany(
-        { sort: { $gte: sort, $lt: currentSort } },
-        { $inc: { sort: 1 } }
-      );
-    }
-    // Decrement sort value for items that need to move down
-    else if (sort > currentSort) {
-      await helpguideEmployer_model.updateMany(
-        { sort: { $gt: currentSort, $lte: sort } },
-        { $inc: { sort: -1 } }
-      );
-    }
-
-    // Update the current item's sort value
-    currentHelpGuideEmployer.sort = sort;
-    await currentHelpGuideEmployer.save();
+  // if (currentSort !== sort) {
+  // Increment sort value for items that need to move up
+  if (sort <= currentSort) {
+    await helpguideEmployer_model.updateMany(
+      { sort: { $gte: sort, $lt: currentSort } },
+      { $inc: { sort: 1 } }
+    );
   }
+  // Decrement sort value for items that need to move down
+  else if (sort > currentSort) {
+    await helpguideEmployer_model.updateMany(
+      { sort: { $gt: currentSort, $lte: sort } },
+      { $inc: { sort: -1 } }
+    );
+  }
+
+  // Update the current item's sort value
+  currentHelpGuideEmployer.sort = sort;
+  await currentHelpGuideEmployer.save();
+  // }
   if (currentHelpGuideEmployer.video) {
     [currentHelpGuideEmployer.video] = await generateSignedUrl([
       currentHelpGuideEmployer.video,

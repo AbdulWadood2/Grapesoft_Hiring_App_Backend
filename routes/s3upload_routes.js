@@ -4,6 +4,7 @@ const route = express.Router();
 
 // model
 const employer_model = require("../models/employer_model");
+const admin_model = require("../models/admin_model");
 
 const { verifyToken } = require("../authorization/verifyToken");
 
@@ -49,7 +50,7 @@ const uploadFieldsUser = uploadsUser.fields([{ name: "file", maxCount: 100 }]);
  */
 route.post(
   "/",
-  verifyToken([employer_model]),
+  verifyToken([admin_model, employer_model]),
   uploadFieldsUser,
   uploadProductImg
 );
