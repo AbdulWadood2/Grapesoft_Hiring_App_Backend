@@ -140,7 +140,7 @@ const editHelpGuideEmployer = catchAsync(async (req, res, next) => {
 });
 
 // method delete
-// endPoint /api/v1/helpguideemployer/
+// endPoint /api/v1/helpguideemployer/:id
 // description delete employer help and guide
 const deleteHelpGuideEmployer = catchAsync(async (req, res, next) => {
   const helpGuideEmployer = await helpguideEmployer_model.findByIdAndDelete(

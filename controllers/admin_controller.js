@@ -11,7 +11,7 @@ const { successMessage } = require("../successHandlers/successController");
 const CryptoJS = require("crypto-js");
 
 // method POST
-// route /api/v1/admin/
+// route /api/v1/admin/login
 // login admin
 const loginAdmin = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
@@ -41,4 +41,13 @@ const loginAdmin = catchAsync(async (req, res, next) => {
   });
 });
 
-module.exports = { loginAdmin }; // Export your function
+// method GET
+// route /api/v1/admin/
+// get admin profile
+const getAdminProfile = catchAsync(async (req, res, next) => {
+  const admin = await admin_model.findById(req.user.id);
+  if (!admin) return next(new appError("account not found", 400));
+  return successMessage(200, res, "get admin profile success", admin);
+});
+
+module.exports = { loginAdmin, getAdminProfile }; // Export your function

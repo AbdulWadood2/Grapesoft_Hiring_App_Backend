@@ -6,11 +6,14 @@ const admin_model = require("../models/admin_model");
 // auth
 const { verifyToken } = require("../authorization/verifyToken");
 // controller
-const { loginAdmin } = require("../controllers/admin_controller");
+const {
+  loginAdmin,
+  getAdminProfile,
+} = require("../controllers/admin_controller");
 
 /**
  * @swagger
- * /api/v1/admin/:
+ * /api/v1/admin/login:
  *   post:
  *     summary: Admin login
  *     description: Logs in an admin using their email and password, and returns a JWT access token.
@@ -35,6 +38,22 @@ const { loginAdmin } = require("../controllers/admin_controller");
  *       202:
  *         description: Login successful. Returns an access token and admin details.
  */
-route.post("/", loginAdmin);
+route.post("/login", loginAdmin);
+
+/**
+ * @swagger
+ * /api/v1/admin/:
+ *   get:
+ *     summary: Get Admin Profile
+ *     description: Retrieve the profile of the logged-in admin user.
+ *     tags:
+ *       - Admin/account
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved admin profile.
+ */
+route.get("/", verifyToken([admin_model]), getAdminProfile);
 
 module.exports = route;

@@ -17,6 +17,8 @@ app.use(
     origin: [
       "https://grapesofthrinterviewapp.mantiqsoft.com",
       "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002",
       "http://192.168.0.173:3000",
     ],
     credentials: true,
