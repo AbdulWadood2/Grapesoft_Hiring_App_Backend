@@ -10,6 +10,7 @@ const testBuilder_routes = require("./routes/testBuilder_routes.js");
 const job_routes = require("./routes/job_routes.js");
 const admin_routes = require("./routes/admin_routes.js");
 const helpguideemployer_routes = require("./routes/help&guideEmployer_routes.js");
+const package_routes = require("./routes/package_routes.js");
 
 const app = express();
 app.use(
@@ -37,6 +38,7 @@ app.use("/api/v1/testBuilder", testBuilder_routes);
 app.use("/api/v1/job", job_routes);
 app.use("/api/v1/admin", admin_routes);
 app.use("/api/v1/helpguideemployer", helpguideemployer_routes);
+app.use("/api/v1/package", package_routes);
 
 // Connect to MongoDB
 connectionDb().catch((error) => {
