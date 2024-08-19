@@ -7,6 +7,7 @@ const {
   editPackageStatus,
 } = require("../controllers/package_controller");
 const admin_model = require("../models/admin_model");
+const employer_model = require("../models/employer_model");
 const { verifyToken } = require("../authorization/verifyToken");
 const route = express.Router();
 
@@ -138,13 +139,14 @@ route.delete("/:id", verifyToken([admin_model]), deletePackage);
  *     summary: Get all packages
  *     tags:
  *       - Admin/Packages
+ *       - Employer/Packages
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Packages retrieved successfully
  */
-route.get("/", verifyToken([admin_model]), getAllPackages);
+route.get("/", verifyToken([admin_model, employer_model]), getAllPackages);
 
 /**
  * @swagger
