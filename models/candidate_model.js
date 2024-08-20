@@ -10,27 +10,55 @@ const candidateSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    jobApplication: {
-      type: Boolean,
-      default: false,
+    countryOfRecidence: {
+      type: String,
+      default: null,
     },
-    testResult: {
-      type: Boolean,
-      default: false,
+    countryOfBirth: {
+      type: String,
+      default: null,
     },
-    applicationApprove: {
-      type: Boolean,
-      default: false,
+    timezone: {
+      type: String,
+      default: null,
+    },
+    contactNumber: {
+      type: String,
+      default: null,
+    },
+    whatsapp: {
+      type: String,
+      default: null,
+    },
+    telegram: {
+      type: String,
+      default: null,
+    },
+    skype: {
+      type: String,
+      default: null,
+    },
+    other: {
+      type: String,
+      default: null,
+    },
+    aboutVideo: {
+      type: String,
+      default: null,
+    },
+    cv: {
+      type: String,
+      default: null,
+    },
+    coverLetter: {
+      type: String,
+      default: null,
     },
     refreshToken: [
       {
         type: String,
       },
     ],
-    active:{
-      type:Boolean,
-      default:true
-    }
   },
   {
     timestamps: true,
