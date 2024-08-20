@@ -161,7 +161,7 @@ route.get("/", verifyToken([employer_model]), getJobs);
  *       202:
  *         description: Job fetched successfully.
  */
-route.get("/:id", verifyToken([employer_model]), getJobById);
+route.get("/:id", getJobById);
 
 /**
  * @swagger

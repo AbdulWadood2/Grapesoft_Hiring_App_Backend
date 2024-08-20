@@ -186,9 +186,10 @@ const getJobs = catchAsync(async (req, res, next) => {
 // method GET
 // endPoint /api/v1/job/:id
 // description get job by id
+// privacy public
 const getJobById = catchAsync(async (req, res, next) => {
   const jobId = req.params.id;
-  const job = await job_model.findOne({ _id: jobId, employerId: req.user.id });
+  const job = await job_model.findOne({ _id: jobId });
   if (!job) {
     return next(
       new appError(` Job not found with id ${jobId}. Please try again!`, 400)
