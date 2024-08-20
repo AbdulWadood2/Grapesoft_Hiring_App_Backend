@@ -5,6 +5,7 @@ const {
   deletePackage,
   getAllPackages,
   editPackageStatus,
+  getEmployerPackages,
 } = require("../controllers/package_controller");
 const admin_model = require("../models/admin_model");
 const employer_model = require("../models/employer_model");
@@ -139,14 +140,29 @@ route.delete("/:id", verifyToken([admin_model]), deletePackage);
  *     summary: Get all packages
  *     tags:
  *       - Admin/Packages
- *       - Employer/Packages
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Packages retrieved successfully
  */
-route.get("/", verifyToken([admin_model, employer_model]), getAllPackages);
+route.get("/", verifyToken([admin_model]), getAllPackages);
+
+/**
+ * @swagger
+ * /api/v1/package/get/employer:
+ *   get:
+ *     summary: Get all employer packages
+ *     description: Retrieve all available packages for employers, including a check to ensure a free trial package exists. Also returns the current subscription of the authenticated user.
+ *     tags:
+ *       - Employer/Packages
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved employer packages.
+ */
+route.get("/get/employer", verifyToken([employer_model]), getEmployerPackages);
 
 /**
  * @swagger

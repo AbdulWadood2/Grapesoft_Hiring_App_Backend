@@ -4,6 +4,7 @@ const catchAsync = require("../errorHandlers/catchAsync");
 const appError = require("../errorHandlers/appError");
 // model
 const package_model = require("../models/package_model.js");
+const subscription_model = require("../models/subscription_model.js");
 // successMessage
 const { successMessage } = require("../successHandlers/successController");
 // joi validation
@@ -126,6 +127,33 @@ const getAllPackages = catchAsync(async (req, res, next) => {
   return successMessage(200, res, "Packages retrieved", packages);
 });
 
+// method GET
+// endPoint /api/v1/package/get/employer
+// description get all packages employer
+const getEmployerPackages = catchAsync(async (req, res, next) => {
+  const freePackage = await package_model.findOne({
+    type: 0,
+  });
+  if (!freePackage) {
+    await package_model.create({
+      title: "Free trial",
+      features: ["All Access", "Enjoy All Access"],
+      numberOfCredits: 200,
+      type: 0,
+      active: true,
+    });
+  }
+  const subscription = await subscription_model.findOne({
+    employerId: req.user.id,
+  });
+  const packages = await package_model.find({ type: 1 }).sort({ createdAt: 1 });
+
+  return successMessage(200, res, "Packages retrieved", {
+    currentSubscription: subscription,
+    packages,
+  });
+});
+
 // method put
 // endPoint /api/v1/package/freeStatus/edit
 // description edit free package status
@@ -167,5 +195,6 @@ module.exports = {
   editPackage,
   deletePackage,
   getAllPackages,
+  getEmployerPackages,
   editPackageStatus,
 };

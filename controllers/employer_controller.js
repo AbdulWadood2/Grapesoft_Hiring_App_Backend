@@ -5,6 +5,8 @@ const catchAsync = require("../errorHandlers/catchAsync");
 const appError = require("../errorHandlers/appError");
 // model
 const employer_model = require("../models/employer_model");
+const package_model = require("../models/package_model");
+const subscription_model = require("../models/subscription_model");
 // sign access token
 const {
   generateAccessTokenRefreshToken,
@@ -75,11 +77,24 @@ const signUpEmployer = catchAsync(async (req, res, next) => {
   user.password = undefined;
   user.refreshToken = undefined;
   // send response
-  return successMessage(202, res, "signUp success", {
+  successMessage(202, res, "signUp success", {
     accessToken,
     // refreshToken,
     ...JSON.parse(JSON.stringify(user)),
   });
+  const freePackage = await package_model.findOne({
+    type: 0,
+  });
+  if (freePackage.active) {
+    await subscription_model.create({
+      title: freePackage.title,
+      features: freePackage.features,
+      pricePerCredit: freePackage.pricePerCredit,
+      numberOfCredits: freePackage.numberOfCredits,
+      type: freePackage.type,
+      active: freePackage.active,
+    });
+  }
 });
 
 // method post
