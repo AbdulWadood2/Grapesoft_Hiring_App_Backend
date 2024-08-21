@@ -12,6 +12,7 @@ const admin_routes = require("./routes/admin_routes.js");
 const helpguideemployer_routes = require("./routes/help&guideEmployer_routes.js");
 const package_routes = require("./routes/package_routes.js");
 const subscription_routes = require("./routes/subscription_routes.js");
+const candiadteJobs_routes = require("./routes/candidateJobs_routes.js");
 
 const app = express();
 app.use(
@@ -41,6 +42,7 @@ app.use("/api/v1/admin", admin_routes);
 app.use("/api/v1/helpguideemployer", helpguideemployer_routes);
 app.use("/api/v1/package", package_routes);
 app.use("/api/v1/subscription", subscription_routes);
+app.use("/api/v1/candidateJob", candiadteJobs_routes);
 
 // Connect to MongoDB
 connectionDb().catch((error) => {

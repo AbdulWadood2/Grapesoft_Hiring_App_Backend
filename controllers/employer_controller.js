@@ -178,9 +178,6 @@ const verifyOTP = catchAsync(async (req, res, next) => {
   if (!employerExist) {
     return next(new appError("account not found!", 400));
   }
-  if (!employerExist.active) {
-    return next(new appError("account is blocked!", 400));
-  }
   const decryptedOtp = JSON.parse(
     CryptoJS.AES.decrypt(
       employerExist.encryptOTP,
@@ -239,7 +236,7 @@ const updateProfile = catchAsync(async (req, res, next) => {
   }
   let employer = await employer_model.findById(req.user.id);
   if (value.avatar) {
-    const avatarInAwsRxists = await checkImageExists([value.avatar]);
+    const [avatarInAwsRxists] = await checkImageExists([value.avatar]);
     if (!avatarInAwsRxists) {
       return next(
         new appError(

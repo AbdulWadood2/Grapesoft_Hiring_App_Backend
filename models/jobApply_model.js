@@ -1,19 +1,16 @@
+const { required } = require("joi");
 const mongoose = require("mongoose");
 
-const candidateSchema = new mongoose.Schema(
+const jobApplySchema = new mongoose.Schema(
   {
-    avatar: { type: String, default: null },
+    candidateId: { type: mongoose.Schema.Types.ObjectId, required: true },
+    jobId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
     first_name: { type: String, required: true },
     last_name: { type: String, required: true },
     email: { type: String, required: true },
-    password: {
-      type: String,
-      default: null,
-    },
-    encryptOTP: {
-      type: String,
-      default: null,
-    },
     countryOfRecidence: {
       type: String,
       default: null,
@@ -30,20 +27,8 @@ const candidateSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    whatsapp: {
-      type: String,
-      default: null,
-    },
-    telegram: {
-      type: String,
-      default: null,
-    },
-    skype: {
-      type: String,
-      default: null,
-    },
-    other: {
-      type: String,
+    availabilityDate: {
+      type: Date,
       default: null,
     },
     aboutVideo: {
@@ -58,16 +43,11 @@ const candidateSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    refreshToken: [
-      {
-        type: String,
-      },
-    ],
   },
   {
     timestamps: true,
   }
 );
 
-const candidate = mongoose.model("candidate", candidateSchema);
-module.exports = candidate;
+const job = mongoose.model("jobapply", jobApplySchema);
+module.exports = job;

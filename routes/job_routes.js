@@ -10,6 +10,9 @@ const {
 } = require("../controllers/job_controller");
 const employer_model = require("../models/employer_model");
 const { verifyToken } = require("../authorization/verifyToken");
+const {
+  applyJobCandidate,
+} = require("../controllers/candidateJobs_controller");
 const route = express.Router();
 
 /**
@@ -139,6 +142,37 @@ route.post("/", verifyToken([employer_model]), createJob);
  *         description: Jobs fetched successfully.
  */
 route.get("/", verifyToken([employer_model]), getJobs);
+
+/**
+ * @swagger
+ * /api/v1/job/forCandidate/all:
+ *   get:
+ *     summary: Get a list of jobs for candidates
+ *     description: Fetch a paginated list of public jobs available for candidates. This endpoint returns job details along with generated signed URLs for job-related documents and videos.
+ *     tags:
+ *       - Jobs
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: The page number to retrieve.
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: The number of jobs to retrieve per page.
+ *     responses:
+ *       200:
+ *         description: Jobs fetched successfully.
+ */
+route.get(
+  "/forCandidate/all",
+  verifyToken([employer_model]),
+  applyJobCandidate
+);
 
 /**
  * @swagger

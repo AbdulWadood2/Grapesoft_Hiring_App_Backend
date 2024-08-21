@@ -2,7 +2,6 @@ const express = require("express");
 const {
   signUpCandidate,
   logInCandidate,
-  getJobs,
   getCandidateProfile,
   sendForgetOTP,
   verifyOTP,
@@ -135,7 +134,7 @@ route.post("/sendForgetOTP", sendForgetOTP);
  *     summary: Verify OTP
  *     description: Verify the OTP sent to the candidate's email.
  *     tags:
- *       - Employer/account
+ *       - Candidate/account
  *     requestBody:
  *       required: true
  *       content:
@@ -162,12 +161,12 @@ route.post("/verifyOTP", verifyOTP);
 
 /**
  * @swagger
- * /api/v1/candiadte/resetPassword:
+ * /api/v1/candidate/resetPassword:
  *   post:
  *     summary: Reset the password
  *     description: Allows an candiadte to reset their password using email and OTP.
  *     tags:
- *       - Candiadte/account
+ *       - Candidate/account
  *     requestBody:
  *       required: true
  *       content:
@@ -292,21 +291,5 @@ route.post("/resetPassword", resetPassword);
  *         description: Profile updated successfully
  */
 route.put("/", verifyToken([candidate]), updateProfile);
-
-/**
- * @swagger
- * /api/v1/candidate/getJobs:
- *   get:
- *     summary: Retrieve job listings
- *     description: Retrieves a list of job openings available to candidates.
- *     tags:
- *       - Candidate/account
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: A list of job openings
- */
-route.get("/getJobs", authenticationController.protect(candidate), getJobs);
 
 module.exports = route;

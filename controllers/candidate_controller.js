@@ -2,6 +2,8 @@
 const catchAsync = require("../errorHandlers/catchAsync");
 // appError
 const appError = require("../errorHandlers/appError");
+// email sent construction
+const ForgetPasswordEmail = require("../emailSender/forgetPassword/ForgetPasswordEmail.js");
 // sign access token
 const {
   generateAccessTokenRefreshToken,
@@ -12,12 +14,21 @@ const { successMessage } = require("../successHandlers/successController");
 const {
   candidateSignupValidationSchema,
   candidateLogInValidationSchema,
+  editProfileValidationSchema,
 } = require("../validation/candidate_joi_validation");
 // crypto.js
 const CryptoJS = require("crypto-js");
 // models
 const candidate_model = require("../models/candidate_model");
 const job = require("../models/job_model");
+// gererate signed url
+const { generateSignedUrl } = require("./awsController");
+const { generateRandomNumber } = require("../functions/randomDigits_functions");
+const {
+  getFileName,
+  checkImageExists,
+  checkDuplicateAwsImgsInRecords,
+} = require("../functions/aws_functions.js");
 
 // method post
 // endPoint /api/v1/candidate/signup
@@ -81,7 +92,7 @@ const logInCandidate = catchAsync(async (req, res, next) => {
   }
   const candidateExist = await candidate_model.findOne({ email: value.email });
   if (!candidateExist) {
-    return next(new appError("Incorrect email and password!", 400));
+    return next(new appError("account not found", 400));
   }
 
   // Encrypt the password
@@ -91,7 +102,7 @@ const logInCandidate = catchAsync(async (req, res, next) => {
   );
   let originalToken = bytes.toString(CryptoJS.enc.Utf8);
   if (originalToken !== value.password) {
-    return next(new appError("Incorrect email and password!", 400));
+    return next(new appError("Incorrect password", 400));
   }
   const { refreshToken, accessToken } = generateAccessTokenRefreshToken(
     candidateExist._id.toString()
@@ -107,19 +118,28 @@ const logInCandidate = catchAsync(async (req, res, next) => {
 // endPoint /api/v1/candidate
 // description get candidate profile
 const getCandidateProfile = catchAsync(async (req, res, next) => {
-  const employerExist = await candidate_model.findOne({ _id: req.user.id });
-  if (!employerExist) {
+  const candidateExist = await candidate_model.findOne({ _id: req.user.id });
+  if (!candidateExist) {
     return next(new appError("candidate not exist!", 400));
   }
 
-  const avatar = await generateSignedUrl([employerExist.avatar]);
-  employerExist.avatar = avatar[0];
-  return successMessage(200, res, "Candidate Profile fetched", employerExist);
+  if (candidateExist.avatar) {
+    [candidateExist.avatar] = await generateSignedUrl([candidateExist.avatar]);
+  }
+  if (candidateExist.aboutVideo) {
+    [candidateExist.aboutVideo] = await generateSignedUrl([
+      candidateExist.aboutVideo,
+    ]);
+  }
+  if (candidateExist.cv) {
+    [candidateExist.cv] = await generateSignedUrl([candidateExist.cv]);
+  }
+  return successMessage(200, res, "Candidate Profile fetched", candidateExist);
 });
 
 // method post
-// endPoint /api/v1/employer/sendForgetOTP
-// description get employer profile
+// endPoint /api/v1/candidate/sendForgetOTP
+// description get candidate profile
 const sendForgetOTP = catchAsync(async (req, res, next) => {
   const { email } = req.body;
   const candidateExist = await candidate_model.findOne({ email });
@@ -131,8 +151,8 @@ const sendForgetOTP = catchAsync(async (req, res, next) => {
     JSON.stringify({ otp, email }),
     process.env.CRYPTO_SEC
   ).toString();
-  employerExist.encryptOTP = encryptedOtp;
-  await employerExist.save();
+  candidateExist.encryptOTP = encryptedOtp;
+  await candidateExist.save();
   await new ForgetPasswordEmail({ email }, otp).sendVerificationCode();
   return successMessage(200, res, "sendForgetOTP success");
 });
@@ -142,18 +162,15 @@ const sendForgetOTP = catchAsync(async (req, res, next) => {
 // description verify OTP
 const verifyOTP = catchAsync(async (req, res, next) => {
   const { otp, email } = req.body;
-  const employerExist = await candidate_model.findOne({ email });
-  if (!employerExist) {
+  const candidateExist = await candidate_model.findOne({ email });
+  if (!candidateExist) {
     return next(new appError("account not found!", 400));
-  }
-  if (!employerExist.active) {
-    return next(new appError("account is blocked!", 400));
   }
   const decryptedOtp = JSON.parse(
     CryptoJS.AES.decrypt(
-      employerExist.encryptOTP,
+      candidateExist.encryptOTP,
       process.env.CRYPTO_SEC
-    ).toString(CryptoJS.enc.Utf8, employerExist.encryptOTP)
+    ).toString(CryptoJS.enc.Utf8, candidateExist.encryptOTP)
   );
   if (Number(otp) !== Number(decryptedOtp.otp)) {
     return next(new appError("invalid OTP!", 400));
@@ -169,9 +186,6 @@ const resetPassword = catchAsync(async (req, res, next) => {
   const candidateExist = await candidate_model.findOne({ email });
   if (!candidateExist) {
     return next(new appError("account not found!", 400));
-  }
-  if (!candidateExist.active) {
-    return next(new appError("account is blocked!", 400));
   }
   if (!candidateExist.encryptOTP) {
     return next(new appError("send otp first", 400));
@@ -208,7 +222,7 @@ const updateProfile = catchAsync(async (req, res, next) => {
   let candidate = await candidate_model.findById(req.user.id);
   if (value.avatar) {
     [value.avatar] = await getFileName([value.avatar]);
-    const avatarInAwsRxists = await checkImageExists([value.avatar]);
+    const [avatarInAwsRxists] = await checkImageExists([value.avatar]);
     if (!avatarInAwsRxists) {
       return next(
         new appError(
@@ -229,6 +243,52 @@ const updateProfile = catchAsync(async (req, res, next) => {
       }
     }
   }
+  if (value.aboutVideo) {
+    [value.aboutVideo] = await getFileName([value.aboutVideo]);
+    const [aboutVideoInAwsRxists] = await checkImageExists([value.aboutVideo]);
+    if (!aboutVideoInAwsRxists) {
+      return next(
+        new appError(
+          `
+        image not exist in aws
+        `,
+          400
+        )
+      );
+    }
+    if (value.aboutVideo !== candidate.aboutVideo) {
+      const { message, success } = await checkDuplicateAwsImgsInRecords(
+        [value.aboutVideo],
+        "candidate aboutVideo"
+      );
+      if (!success) {
+        return next(new appError(message, 400));
+      }
+    }
+  }
+  if (value.cv) {
+    [value.cv] = await getFileName([value.cv]);
+    const [cvInAwsRxists] = await checkImageExists([value.cv]);
+    if (!cvInAwsRxists) {
+      return next(
+        new appError(
+          `
+        image not exist in aws
+        `,
+          400
+        )
+      );
+    }
+    if (value.cv !== candidate.cv) {
+      const { message, success } = await checkDuplicateAwsImgsInRecords(
+        [value.cv],
+        "candidate cv"
+      );
+      if (!success) {
+        return next(new appError(message, 400));
+      }
+    }
+  }
   candidate = await candidate_model
     .findOneAndUpdate(
       {
@@ -242,17 +302,19 @@ const updateProfile = catchAsync(async (req, res, next) => {
       }
     )
     .select("-password -refreshToken -encryptOTP");
-  [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
+
+  if (candidate.avatar) {
+    [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
+  }
+  if (candidate.aboutVideo) {
+    [candidate.aboutVideo] = await generateSignedUrl([candidate.aboutVideo]);
+  }
+  if (candidate.cv) {
+    [candidate.cv] = await generateSignedUrl([candidate.cv]);
+  }
   return successMessage(200, res, "profile updated successfully", candidate);
 });
 
-const getJobs = catchAsync(async (req, res, next) => {
-  let jobs = await job.find({ active: true }).select("createdAt title");
-  res.status(200).json({
-    status: "success",
-    data: jobs,
-  });
-});
 module.exports = {
   signUpCandidate,
   logInCandidate,
@@ -261,5 +323,4 @@ module.exports = {
   verifyOTP,
   resetPassword,
   updateProfile,
-  getJobs,
 };

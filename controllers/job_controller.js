@@ -184,6 +184,54 @@ const getJobs = catchAsync(async (req, res, next) => {
 });
 
 // method GET
+// endPoint /api/v1/job/forCandidate/all
+// description get jobs
+const jobForCandidateAll = catchAsync(async (req, res, next) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  // Calculate the offset
+  const skip = (page - 1) * limit;
+
+  // Fetch the jobs with pagination
+  let jobs = await job_model
+    .find({ privateOrPublic: true })
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 })
+    .lean(); // Assuming you want the newest jobs first
+
+  // Get the total number of jobs to calculate the total pages
+  const totalJobs = await job_model.countDocuments({ privateOrPublic: true });
+  const totalPages = Math.ceil(totalJobs / limit);
+  jobs = await Promise.all(
+    jobs.map(async (job) => {
+      job.applications = 2;
+      job.testCompleted = 1;
+      job.contractSigned = 3;
+      [job.specification.video] = await generateSignedUrl([
+        job.specification.video,
+      ]);
+      [job.specification.docs] = await generateSignedUrl([
+        job.specification.docs,
+      ]);
+      [job.training.video] = await generateSignedUrl([job.training.video]);
+      [job.training.docs] = await generateSignedUrl([job.training.docs]);
+      [job.contract.docs] = await generateSignedUrl([job.contract.docs]);
+      return job;
+    })
+  );
+  // Return paginated results
+  return successMessage(200, res, "Jobs fetched successfully", {
+    jobs,
+    pagination: {
+      currentPage: Number(page),
+      totalPages,
+      totalJobs,
+    },
+  });
+});
+
+// method GET
 // endPoint /api/v1/job/:id
 // description get job by id
 // privacy public
@@ -608,6 +656,7 @@ const getJobDraft = catchAsync(async (req, res, next) => {
 module.exports = {
   createJob,
   getJobs,
+  jobForCandidateAll,
   getJobById,
   editJob,
   deleteJob,
