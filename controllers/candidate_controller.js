@@ -315,6 +315,38 @@ const updateProfile = catchAsync(async (req, res, next) => {
   return successMessage(200, res, "profile updated successfully", candidate);
 });
 
+// method POST
+// endpoint /api/v1/candidate/password
+// desc complete profile with password
+const completeProfileWithPassword = catchAsync(async (req, res, next) => {
+  const { email, password } = req.body;
+  if (!email) {
+    return next(new appError("email is required", 400));
+  }
+  if (!password) {
+    return next(new appError("password is required", 400));
+  }
+  const candidate = await candidate_model.findOne({ email });
+  if (!candidate) {
+    return next(new appError("candidate not found", 400));
+  }
+  if (candidate.password) {
+    return next(new appError("password already set", 400));
+  }
+  // Encrypt the password
+  const encryptedPassword = CryptoJS.AES.encrypt(
+    password,
+    process.env.CRYPTO_SEC
+  ).toString();
+  // Update the candidate
+  candidate.password = encryptedPassword;
+  await candidate.save();
+  candidate.password = undefined;
+  candidate.refreshToken = undefined;
+  candidate.encryptOTP = undefined;
+  return successMessage(200, res, "profile updated successfully", candidate);
+});
+
 module.exports = {
   signUpCandidate,
   logInCandidate,
@@ -323,4 +355,5 @@ module.exports = {
   verifyOTP,
   resetPassword,
   updateProfile,
+  completeProfileWithPassword,
 };

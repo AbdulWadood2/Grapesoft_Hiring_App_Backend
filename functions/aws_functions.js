@@ -22,6 +22,7 @@ const s3 = new S3Client({
 const employer_model = require("../models/employer_model.js");
 const job_model = require("../models/job_model.js");
 const helpguideemployer_model = require("../models/help&guideEmployer_model.js");
+const jobApply_model = require("../models/jobApply_model.js");
 
 // functions
 const checkDuplicateAwsImgsInRecords = async (fileNames, fieldName) => {
@@ -40,6 +41,9 @@ const checkDuplicateAwsImgsInRecords = async (fileNames, fieldName) => {
         }),
         helpguideemployer_model.findOne({
           video: fileName,
+        }),
+        jobApply_model.findOne({
+          $or: [{ aboutVideo: fileName }, { cv: fileName }],
         }),
       ]);
       if (employerAvatar || job || helpguideemployer) {

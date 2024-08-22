@@ -19,8 +19,6 @@ const { verifyToken } = require("../authorization/verifyToken");
  *     description: This endpoint allows a candidate to apply for a job by submitting their details, including their CV, cover letter, and about video. If the candidate does not exist, they will be created in the system.
  *     tags:
  *       - Candidate/Job Applications
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:

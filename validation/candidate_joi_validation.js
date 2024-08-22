@@ -448,11 +448,16 @@ const editProfileValidationSchema = Joi.object({
 });
 
 const jobApplyValidationSchema = Joi.object({
-  candidateId: Joi.string(),
-  jobId: Joi.string().required(),
+  candidateId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .message("candidateId must be valid objectId"),
+  jobId: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .message("jobId must be valid objectId")
+    .required(),
   first_name: Joi.string(),
   last_name: Joi.string(),
-  email: Joi.string(),
+  email: Joi.string().email().required(),
   countryOfRecidence: Joi.string().allow(
     null,
     "United Kingdom",
@@ -870,6 +875,8 @@ const jobApplyValidationSchema = Joi.object({
     .allow(null)
     .pattern(/\.(pdf|doc|docx)$/i, "document format (pdf, doc, docx)"),
   coverLetter: Joi.string().allow(null),
+}).options({
+  abortEarly: false,
 });
 
 module.exports = {

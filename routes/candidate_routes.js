@@ -7,6 +7,7 @@ const {
   verifyOTP,
   resetPassword,
   updateProfile,
+  completeProfileWithPassword,
 } = require("../controllers/candidate_controller");
 const candidate = require("../models/candidate_model");
 const authenticationController = require("../controllers/authentication_controller");
@@ -291,5 +292,37 @@ route.post("/resetPassword", resetPassword);
  *         description: Profile updated successfully
  */
 route.put("/", verifyToken([candidate]), updateProfile);
+
+/**
+ * @swagger
+ * /api/v1/candidate/password:
+ *   post:
+ *     summary: Complete candidate profile with password
+ *     description: Allows a candidate to complete their profile by setting a password. This should only be done if the password hasn't been set yet.
+ *     tags:
+ *       - Candidate/account
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: The candidate's email address.
+ *                 example: candidate@example.com
+ *               password:
+ *                 type: string
+ *                 description: The password to set for the candidate.
+ *                 example: P@ssw0rd123
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully.
+ */
+route.post("/password", completeProfileWithPassword);
 
 module.exports = route;

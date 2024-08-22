@@ -26,8 +26,6 @@ const uploadFieldsUser = uploadsUser.fields([{ name: "file", maxCount: 100 }]);
  *     description: Uploads multiple photos to the S3 bucket.
  *     tags:
  *       - S3/file
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -49,11 +47,6 @@ const uploadFieldsUser = uploadsUser.fields([{ name: "file", maxCount: 100 }]);
  *       500:
  *         description: Internal server error
  */
-route.post(
-  "/",
-  verifyToken([admin_model, employer_model, candidate_model]),
-  uploadFieldsUser,
-  uploadProductImg
-);
+route.post("/", uploadFieldsUser, uploadProductImg);
 
 module.exports = route;

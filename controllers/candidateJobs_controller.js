@@ -28,21 +28,29 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
   const { error, value } = jobApplyValidationSchema.validate(req.body);
 
   if (error) {
-    const errors = error.details.map((el) => el.message);
-    console.log({ errors });
+    const errors = error.details.map((el) => el.message).join(", ");
     return next(new appError(errors, 400));
   }
-  const [job, candidate] = await Promise.all(
+  const [job, candidate, jobApply] = await Promise.all([
     job_model.findOne({
       _id: value.jobId,
     }),
     candidate_model.findOne({
       email: value.email,
-    })
-  );
+    }),
+    jobApply_model.findOne({
+      jobId: value.jobId,
+      email: value.email,
+    }),
+  ]);
 
   if (!job) {
     return next(new appError("Job not found", 400));
+  }
+  if (jobApply) {
+    if (jobApply.status === 0) {
+      return next(new appError("You have already applied for this job", 400));
+    }
   }
   if (value.aboutVideo) {
     [value.aboutVideo] = await getFileName([value.aboutVideo]);
@@ -50,7 +58,17 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
     if (!aboutVideoInAwsRxists) {
       return next(new appError("image not exist in aws", 400));
     }
-    if (value.aboutVideo !== candidate.aboutVideo) {
+    if (candidate) {
+      if (value.aboutVideo !== candidate.aboutVideo) {
+        const { message, success } = await checkDuplicateAwsImgsInRecords(
+          [value.aboutVideo],
+          "candidate aboutVideo"
+        );
+        if (!success) {
+          return next(new appError(message, 400));
+        }
+      }
+    } else if (value.aboutVideo) {
       const { message, success } = await checkDuplicateAwsImgsInRecords(
         [value.aboutVideo],
         "candidate aboutVideo"
@@ -66,7 +84,17 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
     if (!cvInAwsRxists) {
       return next(new appError("image not exist in aws", 400));
     }
-    if (value.cv !== candidate.cv) {
+    if (candidate) {
+      if (value.cv !== candidate.cv) {
+        const { message, success } = await checkDuplicateAwsImgsInRecords(
+          [value.cv],
+          "candidate cv"
+        );
+        if (!success) {
+          return next(new appError(message, 400));
+        }
+      }
+    } else if (value.cv) {
       const { message, success } = await checkDuplicateAwsImgsInRecords(
         [value.cv],
         "candidate cv"
@@ -91,7 +119,6 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
       return next(new appError("About Video is required", 400));
     }
   }
-
   if (!candidate) {
     const newCandidate = await candidate_model.create({
       first_name: value.first_name,
@@ -137,7 +164,7 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
   }
 
   // send response
-  return successMessage(202, res, "job apply successfully", {});
+  return successMessage(202, res, "job apply successfully", null);
 });
 
 module.exports = {
