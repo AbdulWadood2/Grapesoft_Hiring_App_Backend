@@ -18,8 +18,8 @@ const candidateLogInValidationSchema = Joi.object({
 
 const editProfileValidationSchema = Joi.object({
   avatar: Joi.string().pattern(
-    /\.(jpeg|jpg|png)$/i,
-    "image format (jpeg, jpg, png)"
+    /\.(jpeg|jpg|png|jfif)$/i,
+    "image format (jpeg, jpg, png, jfif)"
   ),
   first_name: Joi.string(),
   last_name: Joi.string(),
@@ -432,10 +432,10 @@ const editProfileValidationSchema = Joi.object({
     "Other"
   ),
   contactNumber: Joi.string(),
-  whatsapp: Joi.string(),
-  telegram: Joi.string(),
-  skype: Joi.string(),
-  other: Joi.string(),
+  whatsapp: Joi.string().allow(null),
+  telegram: Joi.string().allow(null),
+  skype: Joi.string().allow(null),
+  other: Joi.string().allow(null),
   aboutVideo: Joi.string().pattern(
     /\.(mp4|mov|avi)$/i,
     "video format (mp4, mov, avi)"
