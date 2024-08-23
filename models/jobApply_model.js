@@ -46,13 +46,17 @@ const jobApplySchema = new mongoose.Schema(
     status: {
       type: Number,
       default: 0,
-    }, 
+    },
     // 0 pending
     // 1 accepted
     // 2 rejected
     // 3 test taken
     // 4 passed
     // 5 contract signed
+    note: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
