@@ -1,22 +1,16 @@
 // catchAsync
 const catchAsync = require("../errorHandlers/catchAsync");
 const appError = require("../errorHandlers/appError");
-const {
-  helpGuideEmployerValidationSchema,
-} = require("../validation/help&guideEmployer_joi_validation");
 // model
 const jobApply_model = require("../models/jobApply_model");
 const job_model = require("../models/job_model");
 const candidate_model = require("../models/candidate_model");
-const {
-  checkDuplicateAwsImgsInRecords,
-  checkImageExists,
-} = require("../functions/aws_functions");
+
 const { generateSignedUrl } = require("./awsController");
 const { successMessage } = require("../successHandlers/successController");
 
 // method post
-// endPoint /api/v1/helpguideemployer/
+// endPoint /api/v1/jobApplication/
 // description create employer help and guide
 const getJobApplications = catchAsync(async (req, res, next) => {
   // Get pagination parameters from the query with default values
@@ -87,26 +81,34 @@ const getJobApplications = catchAsync(async (req, res, next) => {
 });
 
 // Method: GET
-// Endpoint: /api/v1/helpguideemployer/
+// Endpoint: /api/v1/jobApplication/
 // Description: Get a single job application by jobId
 const getSingleJobApplication = catchAsync(async (req, res, next) => {
-  const { jobId } = req.query; // Get jobId from request parameters
-
-  // Check if the job exists and belongs to the employer
-  const job = await job_model.findOne({
-    _id: jobId,
-    employerId: req.user.id, // Ensure the job belongs to the requesting employer
-  });
-
-  if (!job) {
-    return next(new appError("Job not found or unauthorized", 400));
-  }
+  const { jobApplicationId } = req.query; // Get jobId from request parameters
 
   // Fetch the job application for the specified jobId
-  let jobApplication = await jobApply_model.findOne({ jobId });
+  let jobApplication = await jobApply_model
+    .findOne({ _id: jobApplicationId })
+    .lean();
 
   if (!jobApplication) {
     return next(new appError("Job application not found", 400));
+  }
+  const job = await job_model
+    .findOne({
+      _id: jobApplication.jobId.toString(),
+    })
+    .lean();
+
+  if (
+    !(
+      job.employerId.toString() == req.user.id ||
+      jobApplication.candidateId.toString() == req.user.id
+    )
+  ) {
+    return next(
+      new appError("You are not the authorize of this application", 400)
+    );
   }
 
   // Generate signed URLs for CV and about video if they exist
@@ -119,15 +121,20 @@ const getSingleJobApplication = catchAsync(async (req, res, next) => {
       jobApplication.aboutVideo,
     ]);
   }
-  const candidate = await candidate_model.findOne({
-    _id: jobApplication.candidateId,
-  });
+  const candidate = await candidate_model
+    .findOne({
+      _id: jobApplication.candidateId,
+    })
+    .lean();
+  candidate.refreshToken = undefined;
+  candidate.password = undefined;
+  candidate.__v = undefined;
   if (candidate.avatar)
     [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
   if (candidate.aboutVideo)
     [candidate.aboutVideo] = await generateSignedUrl([candidate.aboutVideo]);
   if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
-  item.candidate = candidate;
+  jobApplication.candidate = candidate;
 
   // Respond with the job application details
   return successMessage(
@@ -139,11 +146,20 @@ const getSingleJobApplication = catchAsync(async (req, res, next) => {
 });
 
 // Method: PUT
-// Endpoint: /api/v1/helpguideemployer/editNote
+// Endpoint: /api/v1/jobApplication/editNote
 // Description: Update a job application note by jobId
 const updateJobApplicationNote = catchAsync(async (req, res, next) => {
-  const { jobId } = req.query; // Get jobId from request parameters
+  const { jobId, candidateId } = req.query; // Get jobId from request parameters
+  if (!jobId) {
+    return next(new appError("jobID is required", 400));
+  }
+  if (!candidateId) {
+    return next(new appError("candidateID is required", 400));
+  }
   const { note } = req.body; // Get note from request body
+  if (!note) {
+    return next(new appError("note is required in body", 400));
+  }
   // Check if the job exists and belongs to the employer
   const job = await job_model.findOne({
     _id: jobId,
@@ -153,8 +169,8 @@ const updateJobApplicationNote = catchAsync(async (req, res, next) => {
     return next(new appError("Job not found or unauthorized", 404));
   }
   // Update the job application note
-  let updatedJobApplication = await jobApply_model.updateOne(
-    { jobId },
+  let updatedJobApplication = await jobApply_model.findOneAndUpdate(
+    { jobId, candidateId },
     {
       $set: {
         note: note,
@@ -164,6 +180,7 @@ const updateJobApplicationNote = catchAsync(async (req, res, next) => {
       new: true,
     }
   );
+  updatedJobApplication = JSON.parse(JSON.stringify(updatedJobApplication));
   if (updatedJobApplication.cv) {
     [updatedJobApplication.cv] = await generateSignedUrl([jobApplication.cv]);
   }
@@ -173,9 +190,13 @@ const updateJobApplicationNote = catchAsync(async (req, res, next) => {
       updatedJobApplication.aboutVideo,
     ]);
   }
-  const candidate = await candidate_model.findOne({
-    _id: updatedJobApplication.candidateId,
-  });
+  const candidate = await candidate_model
+    .findOne({
+      _id: updatedJobApplication.candidateId,
+    })
+    .lean();
+  candidate.refreshToken = undefined;
+  candidate.password = undefined;
   if (candidate.avatar)
     [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
   if (candidate.aboutVideo)
@@ -193,10 +214,157 @@ const updateJobApplicationNote = catchAsync(async (req, res, next) => {
 });
 
 // Method PUT
-// Endpoint: /api/v1/helpguideemployer/acceptApplication
+// Endpoint: /api/v1/jobApplication/acceptApplication
 // Description: acceptApplication
+const acceptJobApplication = catchAsync(async (req, res, next) => {
+  const { jobId, candidateId } = req.query;
+  if (!jobId) {
+    return next(new appError("jobID is required", 400));
+  }
+  if (!candidateId) {
+    return next(new appError("candidateID is required", 400));
+  }
 
+  const job = await job_model.findOne({
+    _id: jobId,
+    employerId: req.user.id,
+  });
+  if (!job) {
+    return next(new appError("job not found or unauthorize", 400));
+  }
+  const jobApplication = await jobApply_model.findOne({
+    jobId: jobId,
+    candidateId,
+  });
+  if (!(jobApplication.status == 0)) {
+    return next(new appError("unauthorize for this action", 400));
+  }
+  jobApplication.status == 1;
+  await jobApplication.save();
+  return successMessage(202, res, "job accepted");
+});
+
+// Method PUT
+// Endpoint: /api/v1/jobApplication/passApplication
+// Description: passApplication
+const passJobApplication = catchAsync(async (req, res, next) => {
+  const { jobId, candidateId } = req.query;
+  if (!jobId) {
+    return next(new appError("jobID is required", 400));
+  }
+  if (!candidateId) {
+    return next(new appError("candidateID is required", 400));
+  }
+  const job = await job_model.findOne({
+    _id: jobId,
+    employerId: req.user.id,
+  });
+  if (!job) {
+    return next(new appError("job not found or unauthorize", 400));
+  }
+  const jobApplication = await jobApply_model.findOne({
+    jobId: jobId,
+    candidateId,
+  });
+  if (!(jobApplication.status == 3)) {
+    return next(new appError("unauthorize for action", 400));
+  }
+  jobApplication.status == 4;
+  await jobApplication.save();
+  return successMessage(202, res, "job passed");
+});
+
+// Method PUT
+// Endpoint: /api/v1/jobApplication/ContractApproved
+// Description: ContractApproved
+const contractApproved = catchAsync(async (req, res, next) => {
+  const { jobId, candidateId } = req.query;
+  if (!jobId) {
+    return next(new appError("jobID is required", 400));
+  }
+  if (!candidateId) {
+    return next(new appError("candidateID is required", 400));
+  }
+  const job = await job_model.findOne({
+    _id: jobId,
+    employerId: req.user.id,
+  });
+  if (!job) {
+    return next(new appError("job not found or unauthorize", 400));
+  }
+  const jobApplication = await jobApply_model.findOne({
+    jobId: jobId,
+    candidateId,
+  });
+  if (!(jobApplication.status == 4)) {
+    return next(new appError("unauthorize for this action", 400));
+  }
+  jobApplication.status == 3;
+  await jobApplication.save();
+  return successMessage(202, res, "job passed");
+});
+
+// Method PUT
+// Endpoint: /api/v1/jobApplication/rejectedApplication
+// Description: rejectedApplication
+const rejectedApplication = catchAsync(async (req, res, next) => {
+  const { jobId, candidateId } = req.query;
+  if (!jobId) {
+    return next(new appError("jobID is required", 400));
+  }
+  if (!candidateId) {
+    return next(new appError("candidateID is required", 400));
+  }
+  const job = await job_model.findOne({
+    _id: jobId,
+    employerId: req.user.id,
+  });
+  if (!job) {
+    return next(new appError("job not found or unauthorize", 400));
+  }
+  const jobApplication = await jobApply_model.findOne({
+    jobId: jobId,
+    candidateId,
+  });
+  if (jobApplication.status == 5) {
+    return next(
+      new appError("you not able to reject the contracted application", 400)
+    );
+  }
+  jobApplication.status = 2;
+  await jobApplication.save();
+  return successMessage(202, res, "job rejected");
+});
+
+// Method DELETE
+// Endpoint: /api/v1/jobApplication/deleteApplication
+// Description: deleteApplication
+const deleteApplication = catchAsync(async (req, res, next) => {
+  const { jobId, candidateId } = req.query;
+  if (!jobId) {
+    return next(new appError("jobID is required", 400));
+  }
+  if (!candidateId) {
+    return next(new appError("candidateID is required", 400));
+  }
+  const job = await job_model.findOne({ _id: jobId, employerId: req.user.id });
+  if (!job) {
+    return next(new appError("job not found or unauthorize", 400));
+  }
+  await jobApply_model.findOneAndDelete({
+    jobId: jobId,
+    candidateId,
+  });
+  return successMessage(202, res, "qpplication deleted");
+});
 
 module.exports = {
   getJobApplications,
-}; // Export your function
+  getSingleJobApplication,
+  updateJobApplicationNote,
+  acceptJobApplication,
+  passJobApplication,
+  contractApproved,
+  rejectedApplication,
+  deleteApplication,
+};
