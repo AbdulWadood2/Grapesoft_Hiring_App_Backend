@@ -47,11 +47,10 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("Job not found", 400));
   }
-  if (jobApply) {
-    if (jobApply.status === 0) {
-      return next(new appError("You have already applied for this job", 400));
-    }
-  }
+  // if (jobApply.success == 0) {
+  //   if (jobApply.status === 0)
+  //     return next(new appError("You have already applied for this job", 400));
+  // }
   if (value.aboutVideo) {
     [value.aboutVideo] = await getFileName([value.aboutVideo]);
     const [aboutVideoInAwsRxists] = await checkImageExists([value.aboutVideo]);
@@ -138,6 +137,7 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
       first_name: value.first_name,
       last_name: value.last_name,
       email: value.email,
+      availabilityDate: value.availabilityDate,
       countryOfRecidence: value.countryOfRecidence,
       countryOfBirth: value.countryOfBirth,
       timezone: value.timestamps,
@@ -156,6 +156,7 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
       countryOfRecidence: value.countryOfRecidence,
       countryOfBirth: value.countryOfBirth,
       timezone: value.timestamps,
+      availabilityDate: value.availabilityDate,
       contactNumber: value.contactNumber,
       aboutVideo: value.aboutVideo,
       cv: value.cv,

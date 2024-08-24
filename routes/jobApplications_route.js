@@ -9,7 +9,10 @@ const {
   rejectedApplication,
   deleteApplication,
 } = require("../controllers/jobApplications_controller");
+// models
 const employer_model = require("../models/employer_model");
+const candidate_model = require("../models/candidate_model");
+
 const { verifyToken } = require("../authorization/verifyToken");
 
 const route = express.Router();
@@ -231,6 +234,7 @@ route.put(
  *     summary: Delete a job application
  *     tags:
  *       - Employer/JobApplications
+ *       - Candidate/JobApplications
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -252,7 +256,7 @@ route.put(
  */
 route.delete(
   "/deleteApplication",
-  verifyToken([employer_model]),
+  verifyToken([employer_model, candidate_model]),
   deleteApplication
 );
 

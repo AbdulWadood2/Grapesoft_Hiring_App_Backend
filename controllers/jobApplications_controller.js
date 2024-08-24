@@ -182,7 +182,9 @@ const updateJobApplicationNote = catchAsync(async (req, res, next) => {
   );
   updatedJobApplication = JSON.parse(JSON.stringify(updatedJobApplication));
   if (updatedJobApplication.cv) {
-    [updatedJobApplication.cv] = await generateSignedUrl([jobApplication.cv]);
+    [updatedJobApplication.cv] = await generateSignedUrl([
+      updatedJobApplication.cv,
+    ]);
   }
 
   if (updatedJobApplication.aboutVideo) {
@@ -202,7 +204,7 @@ const updateJobApplicationNote = catchAsync(async (req, res, next) => {
   if (candidate.aboutVideo)
     [candidate.aboutVideo] = await generateSignedUrl([candidate.aboutVideo]);
   if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
-  updateJobApplication = JSON.parse(JSON.stringify(updatedJobApplication));
+  updatedJobApplication = JSON.parse(JSON.stringify(updatedJobApplication));
   updatedJobApplication.candidate = candidate;
   // Respond with the updated job application details
   return successMessage(
@@ -232,16 +234,30 @@ const acceptJobApplication = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("job not found or unauthorize", 400));
   }
-  const jobApplication = await jobApply_model.findOne({
+  let jobApplication = await jobApply_model.findOne({
     jobId: jobId,
     candidateId,
   });
   if (!(jobApplication.status == 0)) {
     return next(new appError("unauthorize for this action", 400));
   }
-  jobApplication.status == 1;
+  jobApplication.status = 1;
   await jobApplication.save();
-  return successMessage(202, res, "job accepted");
+  const candidate = await candidate_model
+    .findOne({
+      _id: candidateId,
+    })
+    .lean();
+  candidate.refreshToken = undefined;
+  candidate.password = undefined;
+  if (candidate.avatar)
+    [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
+  if (candidate.aboutVideo)
+    [candidate.aboutVideo] = await generateSignedUrl([candidate.aboutVideo]);
+  if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
+  jobApplication = JSON.parse(JSON.stringify(jobApplication));
+  jobApplication.candidate = candidate;
+  return successMessage(202, res, "job accepted", jobApplication);
 });
 
 // Method PUT
@@ -296,12 +312,26 @@ const contractApproved = catchAsync(async (req, res, next) => {
     jobId: jobId,
     candidateId,
   });
-  if (!(jobApplication.status == 4)) {
+  if (!(jobApplication.status == 5)) {
     return next(new appError("unauthorize for this action", 400));
   }
-  jobApplication.status == 3;
+  jobApplication.success == 1;
   await jobApplication.save();
-  return successMessage(202, res, "job passed");
+  const candidate = await candidate_model
+    .findOne({
+      _id: candidateId,
+    })
+    .lean();
+  candidate.refreshToken = undefined;
+  candidate.password = undefined;
+  if (candidate.avatar)
+    [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
+  if (candidate.aboutVideo)
+    [candidate.aboutVideo] = await generateSignedUrl([candidate.aboutVideo]);
+  if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
+  jobApplication = JSON.parse(JSON.stringify(jobApplication));
+  jobApplication.candidate = candidate;
+  return successMessage(202, res, "job passed", jobApplication);
 });
 
 // Method PUT
@@ -310,7 +340,7 @@ const contractApproved = catchAsync(async (req, res, next) => {
 const rejectedApplication = catchAsync(async (req, res, next) => {
   const { jobId, candidateId } = req.query;
   if (!jobId) {
-    return next(new appError("jobID is required", 400));
+    return next(new appError("jobId is required", 400));
   }
   if (!candidateId) {
     return next(new appError("candidateID is required", 400));
@@ -322,18 +352,32 @@ const rejectedApplication = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("job not found or unauthorize", 400));
   }
-  const jobApplication = await jobApply_model.findOne({
+  let jobApplication = await jobApply_model.findOne({
     jobId: jobId,
     candidateId,
   });
-  if (jobApplication.status == 5) {
+  if (jobApplication.success == 1) {
     return next(
       new appError("you not able to reject the contracted application", 400)
     );
   }
-  jobApplication.status = 2;
+  jobApplication.success = 2;
   await jobApplication.save();
-  return successMessage(202, res, "job rejected");
+  const candidate = await candidate_model
+    .findOne({
+      _id: candidateId,
+    })
+    .lean();
+  candidate.refreshToken = undefined;
+  candidate.password = undefined;
+  if (candidate.avatar)
+    [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
+  if (candidate.aboutVideo)
+    [candidate.aboutVideo] = await generateSignedUrl([candidate.aboutVideo]);
+  if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
+  jobApplication = JSON.parse(JSON.stringify(jobApplication));
+  jobApplication.candidate = candidate;
+  return successMessage(202, res, "job rejected", jobApplication);
 });
 
 // Method DELETE

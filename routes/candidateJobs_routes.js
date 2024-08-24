@@ -52,6 +52,9 @@ const { verifyToken } = require("../authorization/verifyToken");
  *               timezone:
  *                 type: string
  *                 description: The candidate's timezone.
+ *               availabilityDate:
+ *                 type: string
+ *                 description: The date the candidate is available to start work.
  *               contactNumber:
  *                 type: string
  *                 description: The contact number of the candidate.

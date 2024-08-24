@@ -42,8 +42,43 @@ const signUpCandidate = catchAsync(async (req, res, next) => {
   const candidateExist = await candidate_model.findOne({
     email: value.email,
   });
-  if (candidateExist) {
+  if (candidateExist && candidateExist.password) {
     return next(new appError("you are already signup plz login", 400));
+  }
+  if (candidateExist && !candidateExist.password) {
+    // Encrypt the password
+    const encryptedPassword = CryptoJS.AES.encrypt(
+      value.password,
+      process.env.CRYPTO_SEC
+    ).toString();
+    // get user
+    const user = await candidate_model.findOneAndUpdate(
+      {
+        email: value.email,
+      },
+      {
+        ...value,
+        password: encryptedPassword,
+      },
+      {
+        new: true,
+      }
+    );
+    // check user
+    if (!user) {
+      return next(new appError("error creating candidate", 400));
+    }
+    const { refreshToken, accessToken } = generateAccessTokenRefreshToken(
+      user._id.toString()
+    );
+    user.password = undefined;
+    user.refreshToken = undefined;
+    // send response
+    return successMessage(202, res, "signUp success", {
+      accessToken,
+      // refreshToken,
+      ...JSON.parse(JSON.stringify(user)),
+    });
   }
   // Encrypt the password
   const encryptedPassword = CryptoJS.AES.encrypt(
@@ -62,14 +97,6 @@ const signUpCandidate = catchAsync(async (req, res, next) => {
   const { refreshToken, accessToken } = generateAccessTokenRefreshToken(
     user._id.toString()
   );
-  // await candidate_model.findOneAndUpdate(
-  //   {
-  //     _id: user._id,
-  //   },
-  //   {
-  //     $push: { refreshToken },
-  //   }
-  // );
   user.password = undefined;
   user.refreshToken = undefined;
   // send response
@@ -93,6 +120,9 @@ const logInCandidate = catchAsync(async (req, res, next) => {
   const candidateExist = await candidate_model.findOne({ email: value.email });
   if (!candidateExist) {
     return next(new appError("account not found", 400));
+  }
+  if (!candidateExist.password) {
+    return next(new appError("plz signup", 400));
   }
 
   // Encrypt the password

@@ -182,8 +182,7 @@ route.get(
  *     description: Fetch a specific job by its ID for the logged-in employer. The job's specification, training, and contract media files will include signed URLs.
  *     tags:
  *       - Employer/Jobs
- *     security:
- *       - bearerAuth: []
+ *       - Candidate/Jobs
  *     parameters:
  *       - in: path
  *         name: id

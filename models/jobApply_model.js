@@ -49,10 +49,13 @@ const jobApplySchema = new mongoose.Schema(
     },
     // 0 pending
     // 1 accepted
-    // 2 rejected
     // 3 test taken
     // 4 passed
     // 5 contract signed
+    success: {
+      type: Number,
+      default: 0, // 0 in progress , 1 contract approved , 2 rejected
+    },
     note: {
       type: String,
       default: null,
