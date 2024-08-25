@@ -374,7 +374,13 @@ const completeProfileWithPassword = catchAsync(async (req, res, next) => {
   candidate.password = undefined;
   candidate.refreshToken = undefined;
   candidate.encryptOTP = undefined;
-  return successMessage(200, res, "profile updated successfully", candidate);
+  const { refreshToken, accessToken } = generateAccessTokenRefreshToken(
+    candidate._id.toString()
+  );
+  return successMessage(200, res, "profile updated successfully", {
+    accessToken,
+    ...JSON.parse(JSON.stringify(candidate)),
+  });
 });
 
 module.exports = {
