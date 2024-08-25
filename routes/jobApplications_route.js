@@ -8,6 +8,7 @@ const {
   contractApproved,
   rejectedApplication,
   deleteApplication,
+  redirectToTest,
 } = require("../controllers/jobApplications_controller");
 // models
 const employer_model = require("../models/employer_model");
@@ -259,5 +260,7 @@ route.delete(
   verifyToken([employer_model, candidate_model]),
   deleteApplication
 );
+
+route.get("/redirectToTest", redirectToTest);
 
 module.exports = route;

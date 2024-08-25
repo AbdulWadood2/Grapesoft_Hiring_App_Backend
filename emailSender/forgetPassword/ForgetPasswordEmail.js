@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const { transport } = require("../index");
 // const pug = require("pug");
 const html = `<!DOCTYPE html>
 <html>
@@ -51,13 +52,7 @@ module.exports = class ForgetPasswordEmail {
     this.from = `${process.env.NODEMAILER_EMAIL}`;
   }
   newTransport() {
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.NODEMAILER_EMAIL,
-        pass: process.env.NODEMAILER_PASSWORD,
-      },
-    });
+    return transport();
   }
   async send() {
     const mailOptions = {

@@ -15,7 +15,9 @@ const signRefreshToken = (uniqueId) => {
   return JWT.sign({ uniqueId }, process.env.JWT_SEC);
 };
 const signAccessToken = (id, uniqueId) => {
-  return JWT.sign({ id, uniqueId }, process.env.JWT_SEC,
+  return JWT.sign(
+    { id, uniqueId },
+    process.env.JWT_SEC
     // {
     // expiresIn: process.env.expirydateAccessToken,
     // }
@@ -66,6 +68,7 @@ const verifyToken = (model) => async (req, res, next) => {
     await Promise.all(verifyTokenPromises);
     try {
       const verified = JWT.verify(token, process.env.JWT_SEC);
+      req.fullUser = user;
       user = { id: verified.id };
       req.user = user;
       next();

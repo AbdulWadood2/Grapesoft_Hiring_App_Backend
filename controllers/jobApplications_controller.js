@@ -8,6 +8,7 @@ const candidate_model = require("../models/candidate_model");
 
 const { generateSignedUrl } = require("./awsController");
 const { successMessage } = require("../successHandlers/successController");
+const AcceptedApplicationEmail = require("../emailSender/jobApplication/acceptedApplicationEmail");
 
 // method post
 // endPoint /api/v1/jobApplication/
@@ -257,7 +258,18 @@ const acceptJobApplication = catchAsync(async (req, res, next) => {
   if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
   jobApplication = JSON.parse(JSON.stringify(jobApplication));
   jobApplication.candidate = candidate;
-  return successMessage(202, res, "job accepted", jobApplication);
+  successMessage(202, res, "job accepted", jobApplication);
+  await new AcceptedApplicationEmail(
+    { email: candidate.email },
+    {
+      candidateEmail: candidate.email,
+      jobId: jobApplication.jobId,
+      companyName: req.fullUser.company_name,
+      candidateName: candidate.first_name + " " + candidate.last_name,
+      jobTitle: job.title,
+      employerName: req.fullUser.first_name + " " + req.fullUser.last_name,
+    }
+  ).sendEmail();
 });
 
 // Method PUT
@@ -402,6 +414,31 @@ const deleteApplication = catchAsync(async (req, res, next) => {
   return successMessage(202, res, "qpplication deleted");
 });
 
+// Method GET
+// Endpoint: /api/v1/jobApplication/redirectToTest
+// Description: redirectToTest
+const redirectToTest = catchAsync(async (req, res, next) => {
+  const { jobId, candidateEmail } = req.query;
+  const job = await job_model.findOne({
+    _id: jobId,
+  });
+  if (!job) {
+    return next(new appError("job not found", 400));
+  }
+  const candidate = await candidate_model.findOne({
+    email: candidateEmail,
+  });
+  if (!candidate) {
+    return next(new appError("candidate not found", 400));
+  }
+  const stringUrlForm = encodeURIComponent(
+    JSON.stringify({ jobId, candidateEmail })
+  );
+  res.redirect(
+    `${process.env.FRONTEND_BASE_URL}/completeProfileCandidate/${stringUrlForm}`
+  );
+});
+
 module.exports = {
   getJobApplications,
   getSingleJobApplication,
@@ -411,4 +448,5 @@ module.exports = {
   contractApproved,
   rejectedApplication,
   deleteApplication,
+  redirectToTest,
 };
