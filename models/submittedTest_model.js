@@ -58,6 +58,18 @@ const testSubmitted = new mongoose.Schema(
         },
       },
     ],
+    answer: {
+      type: String,
+      default: null,
+    },
+    isCorrect: {
+      type: Boolean,
+      default: null,
+    },
+    recordedVideo: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

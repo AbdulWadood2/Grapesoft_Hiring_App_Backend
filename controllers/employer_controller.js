@@ -236,6 +236,7 @@ const updateProfile = catchAsync(async (req, res, next) => {
   }
   let employer = await employer_model.findById(req.user.id);
   if (value.avatar) {
+    [value.avatar] = await getFileName([value.avatar]);
     const [avatarInAwsRxists] = await checkImageExists([value.avatar]);
     if (!avatarInAwsRxists) {
       return next(
@@ -258,7 +259,6 @@ const updateProfile = catchAsync(async (req, res, next) => {
       }
     }
   }
-  console.log(value.avatar);
   employer = await employer_model
     .findOneAndUpdate(
       {

@@ -68,7 +68,7 @@ const html = `<!DOCTYPE html>
 
       <p>Please click the link below to complete your signup:</p>
 
-      <p><a href="${process.env.SERVER_BASE_URL}/jobApplication/redirectToTest?jobId=[jobId]&candidateEmail=[candidateEmail]" style="
+      <p><a href="${process.env.SERVER_BASE_URL}/jobApplication/redirectToTest?jobApplyId=[jobApplyId]&candidateEmail=[candidateEmail]" style="
   display: inline-block;
   margin: 20px 0;
   padding: 10px 20px;
@@ -104,7 +104,7 @@ module.exports = class AcceptedApplicationEmail {
   constructor(user, payload) {
     this.to = user.email;
     this.candidateEmail = payload.candidateEmail;
-    this.jobId = payload.jobId;
+    this.jobApplyId = payload.jobApplyId;
     this.companyName = payload.companyName;
     this.candidateName = payload.candidateName;
     this.jobTitle = payload.jobTitle;
@@ -121,7 +121,7 @@ module.exports = class AcceptedApplicationEmail {
       subject: "Application accepted",
       html: html
         .replaceAll("[candidateEmail]", this.candidateEmail)
-        .replaceAll("[jobId]", this.jobId)
+        .replaceAll("[jobApplyId]", this.jobApplyId)
         .replaceAll("[Company Name]", this.companyName)
         .replaceAll("[Candidate's Name]", this.candidateName)
         .replaceAll("[Job Title]", this.jobTitle)

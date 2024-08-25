@@ -47,6 +47,9 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("Job not found", 400));
   }
+  if (!job.status) {
+    return next(new appError("Job is not active", 400));
+  }
   // if (jobApply.success == 0) {
   //   if (jobApply.status === 0)
   //     return next(new appError("You have already applied for this job", 400));
@@ -125,7 +128,7 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
       email: value.email,
       countryOfRecidence: value.countryOfRecidence,
       countryOfBirth: value.countryOfBirth,
-      timezone: value.timestamps,
+      timezone: value.timezone,
       contactNumber: value.contactNumber,
       aboutVideo: value.aboutVideo,
       cv: value.cv,
@@ -140,7 +143,7 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
       availabilityDate: value.availabilityDate,
       countryOfRecidence: value.countryOfRecidence,
       countryOfBirth: value.countryOfBirth,
-      timezone: value.timestamps,
+      timezone: value.timezone,
       contactNumber: value.contactNumber,
       aboutVideo: value.aboutVideo,
       cv: value.cv,
@@ -212,7 +215,7 @@ const getCandidateJobApplications = catchAsync(async (req, res, next) => {
     totalDocuments,
     currentPage: pageNumber,
     totalPages: Math.ceil(totalDocuments / limitNumber),
-    limit: limitNumber,
+    pageSize: limitNumber,
   };
 
   return successMessage(200, res, "Job applications fetched successfully", {

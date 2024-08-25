@@ -40,6 +40,9 @@ const getTestForPerform = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("Job not found", 400));
   }
+  if (!job.status) {
+    return next(new appError("Job is not active", 400));
+  }
   const subscription = await subscription_model.findOne({
     employerId: job.employerId,
   });
@@ -69,7 +72,13 @@ const getTestForPerform = catchAsync(async (req, res, next) => {
 // endPoint /api/v1/test
 // description submit test
 const submitTest = catchAsync(async (req, res, next) => {
-  const { jobApplyId, questions } = req.body;
+  const { recordedVideo, jobApplyId, questions } = req.body;
+  if (!recordedVideo) {
+    return next(new appError("recorded video is required", 400));
+  }
+  if (!jobApplyId) {
+    return next(new appError("job apply id is required", 400));
+  }
   const { error, value } = question_validation.validate({ questions });
   if (error) {
     const errors = error.details.map((err) => err.message).join(", ");
@@ -94,6 +103,9 @@ const submitTest = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("Job not found", 400));
   }
+  if (!job.status) {
+    return next(new appError("Job is not active", 400));
+  }
   const subscription = await subscription_model.findOne({
     employerId: job.employerId,
   });
@@ -105,6 +117,7 @@ const submitTest = catchAsync(async (req, res, next) => {
   }
 
   await submittedTest_model.create({
+    recordedVideo,
     jobApplyId: jobApply._id,
     jobId: jobApply._id,
     candidateId: req.user.id,

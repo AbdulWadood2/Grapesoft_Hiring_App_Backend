@@ -264,7 +264,7 @@ const acceptJobApplication = catchAsync(async (req, res, next) => {
     { email: candidate.email },
     {
       candidateEmail: candidate.email,
-      jobId: jobApplication.jobId,
+      jobApplyId: jobApplication._id,
       companyName: req.fullUser.company_name,
       candidateName: candidate.first_name + " " + candidate.last_name,
       jobTitle: job.title,
@@ -422,11 +422,11 @@ const deleteApplication = catchAsync(async (req, res, next) => {
 // Endpoint: /api/v1/jobApplication/redirectToTest
 // Description: redirectToTest
 const redirectToTest = catchAsync(async (req, res, next) => {
-  const { jobId, candidateEmail } = req.query;
-  const job = await job_model.findOne({
-    _id: jobId,
+  const { jobApplyId, candidateEmail } = req.query;
+  const jobApply = await jobApply_model.findOne({
+    _id: jobApplyId,
   });
-  if (!job) {
+  if (!jobApply) {
     return next(new appError("job not found", 400));
   }
   const candidate = await candidate_model.findOne({
@@ -436,11 +436,17 @@ const redirectToTest = catchAsync(async (req, res, next) => {
     return next(new appError("candidate not found", 400));
   }
   const stringUrlForm = encodeURIComponent(
-    JSON.stringify({ jobId, candidateEmail })
+    JSON.stringify({ jobApplyId, candidateEmail })
   );
-  res.redirect(
-    `${process.env.FRONTEND_BASE_URL}/completeProfileCandidate/${stringUrlForm}`
-  );
+  if (candidate.password) {
+    res.redirect(
+      `${process.env.FRONTEND_BASE_URL}/LoginWithPasswordOnly/${stringUrlForm}`
+    );
+  } else {
+    res.redirect(
+      `${process.env.FRONTEND_BASE_URL}/completeProfileCandidate/${stringUrlForm}`
+    );
+  }
 });
 
 module.exports = {

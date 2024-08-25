@@ -150,7 +150,6 @@ const question_validation = Joi.object({
             })
           )
           .allow(null),
-        isCorrect: Joi.boolean().required(),
         answer: Joi.alternatives()
           .try(
             Joi.when("type", {
@@ -160,6 +159,7 @@ const question_validation = Joi.object({
             })
           )
           .allow(null),
+        isCorrect: Joi.boolean().required(),
       })
     )
     .min(1)

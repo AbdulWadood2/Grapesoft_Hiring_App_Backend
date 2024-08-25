@@ -8,6 +8,7 @@ const route = express.Router();
 
 // model
 const candidate_model = require("../models/candidate_model");
+const employer_model = require("../models/employer_model");
 
 const { verifyToken } = require("../authorization/verifyToken");
 
@@ -55,6 +56,10 @@ route.get("/", verifyToken([candidate_model]), getTestForPerform);
  *                 type: string
  *                 description: The ID of the job application.
  *                 example: "60d5ec49f5f63b1b0c8d2e3f"
+ *               recordedVideo:
+ *                 type: string
+ *                 description: recordedVideo.
+ *                 example: "ok.mp4"
  *               questions:
  *                 type: array
  *                 description: List of questions and answers to submit.
@@ -91,6 +96,10 @@ route.get("/", verifyToken([candidate_model]), getTestForPerform);
  *                       type: boolean
  *                       description: Indicates if the answer is marked as correct.
  *                       example: true
+ *                     answer:
+ *                       type: string
+ *                       description: Indicates if the answer is marked as correct.
+ *                       example: string
  *     responses:
  *       202:
  *         description: Test submitted successfully.
@@ -126,6 +135,6 @@ route.post("/", verifyToken([candidate_model]), submitTest);
  *       202:
  *         description: Submitted test fetched successfully.
  */
-route.get("/submitted", verifyToken([candidate_model]), getSubmittedTest);
+route.get("/submitted", verifyToken([employer_model]), getSubmittedTest);
 
 module.exports = route;
