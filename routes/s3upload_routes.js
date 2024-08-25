@@ -1,22 +1,57 @@
 const express = require("express");
+const multer = require("multer");
 const { uploadProductImg } = require("../controllers/awsController");
+const TestPermissions = require("../models/testPermissions_model"); // Model that stores the file size limit
 const route = express.Router();
 
-// model
-const employer_model = require("../models/employer_model");
-const admin_model = require("../models/admin_model");
-const candidate_model = require("../models/candidate_model");
+// Function to create dynamic multer upload middleware based on file size from DB
+const dynamicMulterUpload = async (req, res, next) => {
+  try {
+    // Fetch the maximum file size from the database model
+    const testPermissions = await TestPermissions.findOne();
+    if (!testPermissions) {
+      return res
+        .status(500)
+        .json({ message: "Failed to fetch file size limit from database." });
+    }
 
-const { verifyToken } = require("../authorization/verifyToken");
+    // Convert the max file size from MB to bytes
+    const maxSizeInBytes = testPermissions.fileDataMax * 1024 * 1024;
 
-const multer = require("multer");
+    // Set up Multer with dynamic file size limit
+    const multerStorageUser = multer.memoryStorage();
+    const uploadsUser = multer({
+      storage: multerStorageUser,
+      limits: { fileSize: maxSizeInBytes }, // Use the fetched file size limit
+    });
 
-const multerStorageUser = multer.memoryStorage();
-const uploadsUser = multer({
-  storage: multerStorageUser,
-});
+    const uploadFieldsUser = uploadsUser.fields([
+      { name: "file", maxCount: 100 },
+    ]);
 
-const uploadFieldsUser = uploadsUser.fields([{ name: "file", maxCount: 100 }]);
+    // Use Multer middleware for file upload
+    uploadFieldsUser(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            message: `File size too large. Max limit is ${testPermissions.fileDataMax} MB.`,
+          });
+        }
+        return res.status(400).json({ message: err.message });
+      } else if (err) {
+        return res
+          .status(500)
+          .json({ message: "An error occurred during file upload." });
+      }
+
+      // Proceed to the next middleware if no error
+      next();
+    });
+  } catch (error) {
+    console.error("Error fetching file size limit from database:", error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
 
 /**
  * @swagger
@@ -47,6 +82,6 @@ const uploadFieldsUser = uploadsUser.fields([{ name: "file", maxCount: 100 }]);
  *       500:
  *         description: Internal server error
  */
-route.post("/", uploadFieldsUser, uploadProductImg);
+route.post("/", dynamicMulterUpload, uploadProductImg);
 
 module.exports = route;
