@@ -5,6 +5,7 @@ const appError = require("../errorHandlers/appError");
 const jobApply_model = require("../models/jobApply_model");
 const job_model = require("../models/job_model");
 const candidate_model = require("../models/candidate_model");
+const submittedTest_model = require("../models/submittedTest_model");
 
 const { generateSignedUrl } = require("./awsController");
 const { successMessage } = require("../successHandlers/successController");
@@ -411,7 +412,10 @@ const deleteApplication = catchAsync(async (req, res, next) => {
     jobId: jobId,
     candidateId,
   });
-  return successMessage(202, res, "qpplication deleted");
+  successMessage(202, res, "qpplication deleted");
+  await submittedTest_model.deleteMany({
+    candidateId: candidateId,
+  });
 });
 
 // Method GET

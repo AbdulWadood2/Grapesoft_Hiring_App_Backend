@@ -168,6 +168,60 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
   return successMessage(202, res, "job apply successfully", null);
 });
 
+// method get
+// endPoint /api/v1/candidateJob/applications/
+// description get all job applications with pagination
+const getCandidateJobApplications = catchAsync(async (req, res, next) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  // Convert page and limit to integers and ensure they are positive
+  const pageNumber = Math.max(1, parseInt(page, 10));
+  const limitNumber = Math.max(1, parseInt(limit, 10));
+
+  // Calculate the number of documents to skip based on the current page
+  const skip = (pageNumber - 1) * limitNumber;
+
+  // Fetch total count of job applications for the candidate
+  const totalDocuments = await jobApply_model.countDocuments({
+    candidateId: req.user.id,
+  });
+
+  // Fetch the paginated job applications
+  let jobApplications = await jobApply_model
+    .find({
+      candidateId: req.user.id,
+    })
+    .sort({
+      createdAt: -1,
+    })
+    .skip(skip)
+    .limit(limitNumber)
+    .lean();
+
+  // Populate job titles for each job application
+  jobApplications = await Promise.all(
+    jobApplications.map(async (jobApplication) => {
+      const job = await job_model.findById(jobApplication.jobId);
+      jobApplication.jobTitle = job ? job.title : "Unknown Job Title"; // Add fallback for missing job title
+      return jobApplication;
+    })
+  );
+
+  // Prepare pagination info
+  const paginationInfo = {
+    totalDocuments,
+    currentPage: pageNumber,
+    totalPages: Math.ceil(totalDocuments / limitNumber),
+    limit: limitNumber,
+  };
+
+  return successMessage(200, res, "Job applications fetched successfully", {
+    jobApplications,
+    paginationInfo,
+  });
+});
+
 module.exports = {
   applyJobCandidate,
+  getCandidateJobApplications,
 };

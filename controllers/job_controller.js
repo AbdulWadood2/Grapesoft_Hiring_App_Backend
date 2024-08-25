@@ -7,6 +7,8 @@ const appError = require("../errorHandlers/appError");
 const job_model = require("../models/job_model.js");
 const jobdraft_model = require("../models/jobDraft_model.js");
 const textBuilder_model = require("../models/testBuilder_model.js");
+const jobApply_model = require("../models/jobApply_model.js");
+const submittedTest_model = require("../models/submittedTest_model.js");
 // sign access token
 const {
   generateAccessTokenRefreshToken,
@@ -404,7 +406,13 @@ const deleteJob = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("Job not found", 400));
   }
-  return successMessage(202, res, `job deleted successfully`);
+  successMessage(202, res, `job deleted successfully`);
+  await jobApply_model.deleteMany({
+    jobId: jobId,
+  });
+  await submittedTest_model.deleteMany({
+    jobId: jobId,
+  });
 });
 
 // method POST

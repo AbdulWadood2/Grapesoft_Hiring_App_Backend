@@ -1,12 +1,11 @@
 const express = require("express");
 const {
   applyJobCandidate,
+  getCandidateJobApplications,
 } = require("../controllers/candidateJobs_controller");
 const route = express.Router();
 
 // model
-const employer_model = require("../models/employer_model");
-const admin_model = require("../models/admin_model");
 const candidate_model = require("../models/candidate_model");
 
 const { verifyToken } = require("../authorization/verifyToken");
@@ -72,5 +71,40 @@ const { verifyToken } = require("../authorization/verifyToken");
  *         description: Job application submitted successfully.
  */
 route.post("/apply", applyJobCandidate);
+
+/**
+ * @swagger
+ * /api/v1/candidateJob/applications/:
+ *   get:
+ *     summary: Get all job applications for a candidate with pagination.
+ *     description: Fetches all job applications associated with a candidate, supporting pagination to manage large sets of data.
+ *     tags:
+ *       - Candidate/Job Applications
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: The page number to fetch.
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: The number of job applications to fetch per page.
+ *     responses:
+ *       200:
+ *         description: Job applications fetched successfully with pagination info.
+ */
+route.get(
+  "/applications/",
+  verifyToken([candidate_model]),
+  getCandidateJobApplications
+);
 
 module.exports = route;

@@ -7,6 +7,7 @@ const testBuilder_model = require("../models/testBuilder_model");
 const testQuestion_model = require("../models/testQuestion_model");
 const job_model = require("../models/job_model");
 const jobdraft_model = require("../models/jobDraft_model.js");
+const jobApply_model = require("../models/jobApply_model.js");
 // successMessage
 const { successMessage } = require("../successHandlers/successController");
 // joi validation
@@ -16,7 +17,6 @@ const {
   testBuilder_addQuestion_validation,
   testBuilder_editQuestion_validation,
 } = require("../validation/testBuilder_joi_validation");
-const { boolean } = require("joi");
 
 // method post
 // endPoint /api/v1/testBuilder
@@ -132,6 +132,8 @@ const getTestBuilderById = catchAsync(async (req, res, next) => {
     testBuilder,
   });
 });
+
+
 
 // method put
 // endPoint /api/v1/testBuilder/:id

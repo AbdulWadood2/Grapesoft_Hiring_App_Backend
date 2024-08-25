@@ -15,6 +15,7 @@ const subscription_routes = require("./routes/subscription_routes.js");
 const candiadteJobs_routes = require("./routes/candidateJobs_routes.js");
 const jobApplication_routes = require("./routes/jobApplications_route.js");
 const testPermissions_routes = require("./routes/testPermisions_routes.js");
+const test_routes = require("./routes/test_routes.js");
 
 const app = express();
 app.use(
@@ -47,6 +48,7 @@ app.use("/api/v1/subscription", subscription_routes);
 app.use("/api/v1/candidateJob", candiadteJobs_routes);
 app.use("/api/v1/jobApplication", jobApplication_routes);
 app.use("/api/v1/testPermissions", testPermissions_routes);
+app.use("/api/v1/test", test_routes);
 
 // Connect to MongoDB
 connectionDb().catch((error) => {
