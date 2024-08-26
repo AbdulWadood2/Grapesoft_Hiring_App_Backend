@@ -1,8 +1,24 @@
 const express = require("express");
 const multer = require("multer");
 const { uploadProductImg } = require("../controllers/awsController");
-const TestPermissions = require("../models/testPermissions_model"); // Model that stores the file size limit
+const TestPermissions = require("../models/testPermissions_model");
+const mime = require("mime-types"); // Import the mime-types package
 const route = express.Router();
+
+// Helper function to determine file type based on the buffer
+const getFileExtension = (buffer) => {
+  // Convert buffer to base64 string for easier processing
+  const base64String = buffer.toString("base64");
+
+  // Detect if file is a video or image based on base64 data
+  if (base64String.startsWith("/9j/")) {
+    return "jpeg";
+  } else if (base64String.startsWith("GkXf")) {
+    return "mp4";
+  }
+
+  return null; // Unknown file type or no extension needed
+};
 
 // Function to create dynamic multer upload middleware based on file size from DB
 const dynamicMulterUpload = async (req, res, next) => {
@@ -22,7 +38,7 @@ const dynamicMulterUpload = async (req, res, next) => {
     const multerStorageUser = multer.memoryStorage();
     const uploadsUser = multer({
       storage: multerStorageUser,
-      limits: { fileSize: maxSizeInBytes }, // Use the fetched file size limit
+      limits: { fileSize: maxSizeInBytes },
     });
 
     const uploadFieldsUser = uploadsUser.fields([
@@ -30,7 +46,7 @@ const dynamicMulterUpload = async (req, res, next) => {
     ]);
 
     // Use Multer middleware for file upload
-    uploadFieldsUser(req, res, (err) => {
+    uploadFieldsUser(req, res, async (err) => {
       if (err instanceof multer.MulterError) {
         if (err.code === "LIMIT_FILE_SIZE") {
           return res.status(400).json({
@@ -42,6 +58,20 @@ const dynamicMulterUpload = async (req, res, next) => {
         return res
           .status(500)
           .json({ message: "An error occurred during file upload." });
+      }
+
+      // Detect file type for files without extensions
+      if (req.files && req.files.file) {
+        for (const file of req.files.file) {
+          // Check if the file has no extension
+          if (!file.originalname.includes(".")) {
+            const fileExtension = getFileExtension(file.buffer);
+            if (fileExtension) {
+              // Rename the file with the detected extension
+              file.originalname += `.${fileExtension}`;
+            }
+          }
+        }
       }
 
       // Proceed to the next middleware if no error

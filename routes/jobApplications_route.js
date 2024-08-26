@@ -130,6 +130,12 @@ route.put("/editNote", verifyToken([employer_model]), updateJobApplicationNote);
  *           type: string
  *         required: true
  *         description: The ID of the candidate.
+ *       - in: query
+ *         name: jobApplicationId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: jobApplicationId.
  *     responses:
  *       202:
  *         description: Job application accepted.
@@ -218,6 +224,12 @@ route.put("/ContractApproved", verifyToken([employer_model]), contractApproved);
  *           type: string
  *         required: true
  *         description: The ID of the candidate.
+ *       - in: query
+ *         name: jobApplicationId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: jobApplicationId.
  *     responses:
  *       202:
  *         description: Job application rejected.

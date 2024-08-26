@@ -10,6 +10,7 @@ const submittedTest_model = require("../models/submittedTest_model");
 const { generateSignedUrl } = require("./awsController");
 const { successMessage } = require("../successHandlers/successController");
 const AcceptedApplicationEmail = require("../emailSender/jobApplication/acceptedApplicationEmail");
+const rejectApplicationEmail = require("../emailSender/jobApplication/rejectApplicationEmail");
 
 // method post
 // endPoint /api/v1/jobApplication/
@@ -221,7 +222,7 @@ const updateJobApplicationNote = catchAsync(async (req, res, next) => {
 // Endpoint: /api/v1/jobApplication/acceptApplication
 // Description: acceptApplication
 const acceptJobApplication = catchAsync(async (req, res, next) => {
-  const { jobId, candidateId } = req.query;
+  const { jobId, candidateId, jobApplicationId } = req.query;
   if (!jobId) {
     return next(new appError("jobID is required", 400));
   }
@@ -239,7 +240,11 @@ const acceptJobApplication = catchAsync(async (req, res, next) => {
   let jobApplication = await jobApply_model.findOne({
     jobId: jobId,
     candidateId,
+    _id: jobApplicationId,
   });
+  if (!jobApplication) {
+    return next(new appError("Job application not found", 400));
+  }
   if (!(jobApplication.status == 0)) {
     return next(new appError("unauthorize for this action", 400));
   }
@@ -351,7 +356,7 @@ const contractApproved = catchAsync(async (req, res, next) => {
 // Endpoint: /api/v1/jobApplication/rejectedApplication
 // Description: rejectedApplication
 const rejectedApplication = catchAsync(async (req, res, next) => {
-  const { jobId, candidateId } = req.query;
+  const { jobId, candidateId, jobApplicationId } = req.query;
   if (!jobId) {
     return next(new appError("jobId is required", 400));
   }
@@ -368,7 +373,11 @@ const rejectedApplication = catchAsync(async (req, res, next) => {
   let jobApplication = await jobApply_model.findOne({
     jobId: jobId,
     candidateId,
+    _id: jobApplicationId,
   });
+  if (!jobApplication) {
+    return next(new appError("jobApplication not found", 400));
+  }
   if (jobApplication.success == 1) {
     return next(
       new appError("you not able to reject the contracted application", 400)
@@ -390,7 +399,15 @@ const rejectedApplication = catchAsync(async (req, res, next) => {
   if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
   jobApplication = JSON.parse(JSON.stringify(jobApplication));
   jobApplication.candidate = candidate;
-  return successMessage(202, res, "job rejected", jobApplication);
+  successMessage(202, res, "job rejected", jobApplication);
+  await new rejectApplicationEmail(
+    { email: candidate.email },
+    {
+      companyName: req.fullUser.company_name,
+      candidateName: candidate.first_name + " " + candidate.last_name,
+      jobTitle: job.title,
+    }
+  ).sendEmail();
 });
 
 // Method DELETE
