@@ -20,7 +20,7 @@ const testSubmitted = new mongoose.Schema(
         type: {
           type: Number,
           required: true,
-          enum: [0, 1, 2, 3], // 0: open question, 1: multiple choice, 2: file question, 3: unsolved
+          enum: [0, 1, 2], // 0: open question, 1: multiple choice, 2: file question
         },
         questionText: {
           type: String,
@@ -28,44 +28,33 @@ const testSubmitted = new mongoose.Schema(
         },
         wordLimit: {
           type: Number,
-          default: function () {
-            return this.type === 0 ? 1 : null; // Only apply default word limit if type is 0 (open question)
-          },
+          default: null,
         },
         options: {
           type: [String],
-          default: function () {
-            return this.type === 1 ? [] : null; // Only initialize as empty array if type is 1 (multiple choice)
-          },
+          default: null,
         },
         correctAnswer: {
           type: Number,
-          default: function () {
-            return this.type === 1 ? null : null; // Maintain explicit null default, used in validation logic
-          },
+          default: null,
         },
         allowFile: {
           type: Boolean,
-          default: function () {
-            return this.type === 2 ? false : null; // Only initialize if type is 2 (file question)
-          },
+        },
+        fileAnswer: {
+          type: String,
+          default: null,
         },
         answer: {
           type: String,
-          default: function () {
-            return this.type === 3 ? "" : null; // Ensure an empty string for type 3 (unsolved)
-          },
+          default: null,
+        },
+        isCorrect: {
+          type: Boolean,
+          default: null,
         },
       },
     ],
-    answer: {
-      type: String,
-      default: null,
-    },
-    isCorrect: {
-      type: Boolean,
-      default: null,
-    },
     recordedVideo: {
       type: String,
       default: null,

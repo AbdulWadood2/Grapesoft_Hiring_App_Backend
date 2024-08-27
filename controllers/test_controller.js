@@ -13,7 +13,7 @@ const subscription_model = require("../models/subscription_model.js");
 // successMessage
 const { successMessage } = require("../successHandlers/successController");
 const {
-  question_validation,
+  submittest_question_validation,
 } = require("../validation/testBuilder_joi_validation.js");
 
 // method get
@@ -79,7 +79,9 @@ const submitTest = catchAsync(async (req, res, next) => {
   if (!jobApplyId) {
     return next(new appError("job apply id is required", 400));
   }
-  const { error, value } = question_validation.validate({ questions });
+  const { error, value } = submittest_question_validation.validate({
+    questions,
+  });
   if (error) {
     const errors = error.details.map((err) => err.message).join(", ");
     return next(new appError(errors, 400));
@@ -115,15 +117,16 @@ const submitTest = catchAsync(async (req, res, next) => {
   if (subscription.currentPackage.packageStatus.numberOfCredits <= 0) {
     return next(new appError("employer have not credits", 400));
   }
-
   await submittedTest_model.create({
     recordedVideo,
     jobApplyId: jobApply._id,
     jobId: jobApply._id,
     candidateId: req.user.id,
     employerId: subscription.employerId,
-    questions: value,
+    ...value,
   });
+  jobApply.status = 3;
+  await jobApply.save();
   successMessage(202, res, "submit test success fully");
   subscription.currentPackage.packageStatus.numberOfCredits =
     subscription.currentPackage.packageStatus.numberOfCredits - 1;

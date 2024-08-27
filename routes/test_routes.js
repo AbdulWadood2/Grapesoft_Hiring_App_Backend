@@ -92,14 +92,18 @@ route.get("/", verifyToken([candidate_model]), getTestForPerform);
  *                       type: boolean
  *                       description: Whether file uploads are allowed for essay questions (only required for type 0).
  *                       example: true
- *                     isCorrect:
- *                       type: boolean
- *                       description: Indicates if the answer is marked as correct.
- *                       example: true
+ *                     fileAnswer:
+ *                       type: string
+ *                       description: Indicates fileAnswer.
+ *                       example: string
  *                     answer:
  *                       type: string
- *                       description: Indicates if the answer is marked as correct.
+ *                       description: Indicates answer.
  *                       example: string
+ *                     isCorrect:
+ *                       type: boolean
+ *                       description: is correct answer.
+ *                       example: null
  *     responses:
  *       202:
  *         description: Test submitted successfully.

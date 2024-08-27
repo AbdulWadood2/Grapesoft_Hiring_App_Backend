@@ -5,6 +5,7 @@ const subscriptionSchema = new mongoose.Schema(
     employerId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
+      unique: true,
     },
     currentPackage: {
       transactionId: {

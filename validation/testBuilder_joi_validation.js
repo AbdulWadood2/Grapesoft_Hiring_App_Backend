@@ -108,21 +108,13 @@ const testBuilder_addQuestion_validation = Joi.object({
 }).options({
   abortEarly: false,
 });
-const question_validation = Joi.object({
+const submittest_question_validation = Joi.object({
   questions: Joi.array()
     .items(
       Joi.object({
-        type: Joi.number().integer().valid(0, 1, 2, 3).required(),
+        type: Joi.number().integer().valid(0, 1, 2).required(),
         questionText: Joi.string().required(),
-        wordLimit: Joi.alternatives()
-          .try(
-            Joi.when("type", {
-              is: 0,
-              then: Joi.number().integer().required(),
-              otherwise: Joi.valid(null),
-            })
-          )
-          .allow(null),
+        wordLimit: Joi.number().allow(null),
         options: Joi.alternatives()
           .try(
             Joi.when("type", {
@@ -150,16 +142,29 @@ const question_validation = Joi.object({
             })
           )
           .allow(null),
-        answer: Joi.alternatives()
+        fileAnswer: Joi.alternatives()
           .try(
             Joi.when("type", {
-              is: 3,
-              then: Joi.string().empty("").required(), // Ensures the answer is an empty string when type is 3
-              otherwise: Joi.string().required(), // For other types, a valid string answer is required
+              is: 0,
+              then: Joi.string(), // Ensures the answer is a required string when type is 0
+              otherwise: Joi.when("type", {
+                is: 2,
+                then: Joi.string().required(), // Allows an empty string or null when type is 2
+                otherwise: Joi.string().required(), // For all other types, a valid string answer is required
+              }),
             })
           )
           .allow(null),
-        isCorrect: Joi.boolean().required(),
+        answer: Joi.string().allow(null),
+        isCorrect: Joi.alternatives()
+          .try(
+            Joi.when("type", {
+              is: 1,
+              then: Joi.boolean().required(), // Ensures the answer is an empty string when type is 3
+              otherwise: Joi.valid(null), // For other types, a valid string answer is required
+            })
+          )
+          .allow(null),
       })
     )
     .min(1)
@@ -215,6 +220,6 @@ module.exports = {
   testBuilder_create_validation,
   testBuilder_update_validation,
   testBuilder_addQuestion_validation,
-  question_validation,
+  submittest_question_validation,
   testBuilder_editQuestion_validation,
 };

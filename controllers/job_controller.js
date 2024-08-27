@@ -148,14 +148,17 @@ const getJobs = catchAsync(async (req, res, next) => {
 
   // Fetch the jobs with pagination
   let jobs = await job_model
-    .find({ employerId: req.user.id })
+    .find({ employerId: req.user.id, isDeleted: false })
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 })
     .lean(); // Assuming you want the newest jobs first
 
   // Get the total number of jobs to calculate the total pages
-  const totalJobs = await job_model.countDocuments({ employerId: req.user.id });
+  const totalJobs = await job_model.countDocuments({
+    employerId: req.user.id,
+    isDeleted: false,
+  });
   const totalPages = Math.ceil(totalJobs / limit);
   jobs = await Promise.all(
     jobs.map(async (job) => {
@@ -196,7 +199,7 @@ const jobForCandidateAll = catchAsync(async (req, res, next) => {
 
   // Fetch the jobs with pagination
   let jobs = await job_model
-    .find({ privateOrPublic: true })
+    .find({ privateOrPublic: true, isDeleted: false })
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 })
@@ -239,7 +242,7 @@ const jobForCandidateAll = catchAsync(async (req, res, next) => {
 // privacy public
 const getJobById = catchAsync(async (req, res, next) => {
   const jobId = req.params.id;
-  const job = await job_model.findOne({ _id: jobId });
+  const job = await job_model.findOne({ _id: jobId, isDeleted: false });
   if (!job) {
     return next(
       new appError(` Job not found with id ${jobId}. Please try again!`, 400)
@@ -399,20 +402,23 @@ const editJob = catchAsync(async (req, res, next) => {
 // description delete the job
 const deleteJob = catchAsync(async (req, res, next) => {
   const jobId = req.params.id;
-  const job = await job_model.findOneAndDelete({
-    _id: jobId,
-    employerId: req.user.id,
-  });
+  const job = await job_model.findOneAndUpdate(
+    {
+      _id: jobId,
+      employerId: req.user.id,
+      isDeleted: false,
+    },
+    {
+      isDeleted: true,
+    },
+    {
+      new: true,
+    }
+  );
   if (!job) {
     return next(new appError("Job not found", 400));
   }
   successMessage(202, res, `job deleted successfully`);
-  await jobApply_model.deleteMany({
-    jobId: jobId,
-  });
-  await submittedTest_model.deleteMany({
-    jobId: jobId,
-  });
 });
 
 // method POST

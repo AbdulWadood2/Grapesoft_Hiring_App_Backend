@@ -20,7 +20,7 @@ const addSubscription = catchAsync(async (req, res, next) => {
     return next(new appError("package not found", 400));
   }
   let subscription = await subscription_model.findOne({
-    userId: req.user.id,
+    employerId: req.user.id,
   });
   if (!subscription) {
     subscription = await subscription_model.create({
