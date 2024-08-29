@@ -229,6 +229,9 @@ const acceptJobApplication = catchAsync(async (req, res, next) => {
   if (!candidateId) {
     return next(new appError("candidateID is required", 400));
   }
+  if (!jobApplicationId) {
+    return next(new appError("jobApplicationID is required", 400));
+  }
 
   const job = await job_model.findOne({
     _id: jobId,
@@ -282,12 +285,15 @@ const acceptJobApplication = catchAsync(async (req, res, next) => {
 // Endpoint: /api/v1/jobApplication/passApplication
 // Description: passApplication
 const passJobApplication = catchAsync(async (req, res, next) => {
-  const { jobId, candidateId } = req.query;
+  const { jobId, candidateId, jobApplicationId } = req.query;
   if (!jobId) {
     return next(new appError("jobID is required", 400));
   }
   if (!candidateId) {
     return next(new appError("candidateID is required", 400));
+  }
+  if (!jobApplicationId) {
+    return next(new appError("jobApplicationID is required", 400));
   }
   const job = await job_model.findOne({
     _id: jobId,
@@ -296,16 +302,31 @@ const passJobApplication = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("job not found or unauthorize", 400));
   }
-  const jobApplication = await jobApply_model.findOne({
+  let jobApplication = await jobApply_model.findOne({
     jobId: jobId,
     candidateId,
+    _id: jobApplicationId,
   });
   if (!(jobApplication.status == 3)) {
     return next(new appError("unauthorize for action", 400));
   }
-  jobApplication.status == 4;
+  jobApplication.status = 4;
   await jobApplication.save();
-  return successMessage(202, res, "job passed");
+  const candidate = await candidate_model
+    .findOne({
+      _id: candidateId,
+    })
+    .lean();
+  candidate.refreshToken = undefined;
+  candidate.password = undefined;
+  if (candidate.avatar)
+    [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
+  if (candidate.aboutVideo)
+    [candidate.aboutVideo] = await generateSignedUrl([candidate.aboutVideo]);
+  if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
+  jobApplication = JSON.parse(JSON.stringify(jobApplication));
+  jobApplication.candidate = candidate;
+  return successMessage(202, res, "job passed", jobApplication);
 });
 
 // Method PUT

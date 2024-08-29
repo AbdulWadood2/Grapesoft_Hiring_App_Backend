@@ -63,6 +63,10 @@ const candidateSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    isverified: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

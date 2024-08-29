@@ -8,6 +8,8 @@ const {
   resetPassword,
   updateProfile,
   completeProfileWithPassword,
+  sendVerifyEmailOTP,
+  verifyAccountByOTP,
 } = require("../controllers/candidate_controller");
 const candidate = require("../models/candidate_model");
 const authenticationController = require("../controllers/authentication_controller");
@@ -292,6 +294,69 @@ route.post("/resetPassword", resetPassword);
  *         description: Profile updated successfully
  */
 route.put("/", verifyToken([candidate]), updateProfile);
+
+/**
+ * @swagger
+ * /api/v1/candidate/sendVerifyEmailOTP:
+ *   post:
+ *     summary: Send OTP to verify candidate's email address
+ *     tags:
+ *       - Candidate/account
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email address of the candidate
+ *                 example: "example@domain.com"
+ *     responses:
+ *       200:
+ *         description: Verification OTP sent successfully
+ */
+route.post("/sendVerifyEmailOTP", sendVerifyEmailOTP);
+
+/**
+ * @swagger
+ * /api/v1/candidate/verifyAccountByOTP:
+ *   post:
+ *     summary: Verify candidate's account using OTP
+ *     tags:
+ *       - Candidate/account
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - otp
+ *               - email
+ *             properties:
+ *               otp:
+ *                 type: string
+ *                 description: The OTP sent to the candidate's email
+ *                 example: "12345"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email address of the candidate
+ *                 example: "example@domain.com"
+ *     responses:
+ *       200:
+ *         description: Account verified successfully
+ */
+route.post("/verifyAccountByOTP", verifyAccountByOTP);
 
 /**
  * @swagger

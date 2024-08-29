@@ -168,11 +168,21 @@ route.put(
  *           type: string
  *         required: true
  *         description: The ID of the candidate.
+ *       - in: query
+ *         name: jobApplicationId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the jobApplicationId.
  *     responses:
  *       202:
  *         description: Job application passed.
  */
-route.put("/", verifyToken([employer_model]), passJobApplication);
+route.put(
+  "/passApplication",
+  verifyToken([employer_model]),
+  passJobApplication
+);
 
 /**
  * @swagger

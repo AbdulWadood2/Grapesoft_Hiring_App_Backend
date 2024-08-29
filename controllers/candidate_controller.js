@@ -59,6 +59,7 @@ const signUpCandidate = catchAsync(async (req, res, next) => {
       {
         ...value,
         password: encryptedPassword,
+        isverified: true,
       },
       {
         new: true,
@@ -89,6 +90,7 @@ const signUpCandidate = catchAsync(async (req, res, next) => {
   const user = await candidate_model.create({
     ...value,
     password: encryptedPassword,
+    isverified: true,
   });
   // check user
   if (!user) {
@@ -346,6 +348,80 @@ const updateProfile = catchAsync(async (req, res, next) => {
 });
 
 // method POST
+// endpoint /api/v1/candidate/sendVerifyEmailOTP
+// description send OTP to verify email
+const sendVerifyEmailOTP = catchAsync(async (req, res, next) => {
+  const { email } = req.body;
+
+  // Check if the candidate exists
+  const candidateExist = await candidate_model.findOne({ email });
+  if (!candidateExist) {
+    return next(new appError("Account not found!", 400));
+  }
+
+  if (candidateExist.isverified) {
+    return next(new appError("Account already verified", 400));
+  }
+
+  // Generate OTP
+  const otp = generateRandomNumber(5);
+
+  // Encrypt the OTP
+  const encryptedOtp = CryptoJS.AES.encrypt(
+    JSON.stringify({ otp, email }),
+    process.env.CRYPTO_SEC
+  ).toString();
+
+  // Store the encrypted OTP in the candidate's record
+  candidateExist.encryptOTP = encryptedOtp;
+  await candidateExist.save();
+
+  // Send the OTP via email
+  await new ForgetPasswordEmail({ email }, otp).sendVerificationCode();
+
+  // Respond with success
+  return successMessage(200, res, "Verification OTP sent successfully");
+});
+
+// method POST
+// endpoint /api/v1/candidate/verifyAccountByOTP
+// description verify account by OTP
+const verifyAccountByOTP = catchAsync(async (req, res, next) => {
+  const { otp, email } = req.body;
+
+  // Check if the candidate exists
+  const candidateExist = await candidate_model.findOne({ email });
+  if (!candidateExist) {
+    return next(new appError("Account not found!", 400));
+  }
+
+  if (candidateExist.isverified) {
+    return next(new appError("Account already verified", 400));
+  }
+
+  // Decrypt the OTP stored in the candidate's record
+  const decryptedOtp = JSON.parse(
+    CryptoJS.AES.decrypt(
+      candidateExist.encryptOTP,
+      process.env.CRYPTO_SEC
+    ).toString(CryptoJS.enc.Utf8)
+  );
+
+  // Verify the OTP
+  if (Number(otp) !== Number(decryptedOtp.otp)) {
+    return next(new appError("Invalid OTP!", 400));
+  }
+
+  // Mark the candidate as verified
+  candidateExist.isverified = true;
+  candidateExist.encryptOTP = null;
+  await candidateExist.save();
+
+  // Respond with success
+  return successMessage(200, res, "Account verified successfully");
+});
+
+// method POST
 // endpoint /api/v1/candidate/password
 // desc complete profile with password
 const completeProfileWithPassword = catchAsync(async (req, res, next) => {
@@ -359,6 +435,9 @@ const completeProfileWithPassword = catchAsync(async (req, res, next) => {
   const candidate = await candidate_model.findOne({ email });
   if (!candidate) {
     return next(new appError("candidate not found", 400));
+  }
+  if (!candidate.isverified) {
+    return next(new appError("candidate not verified", 400));
   }
   if (candidate.password) {
     return next(new appError("password already set", 400));
@@ -391,5 +470,7 @@ module.exports = {
   verifyOTP,
   resetPassword,
   updateProfile,
+  sendVerifyEmailOTP,
+  verifyAccountByOTP,
   completeProfileWithPassword,
 };

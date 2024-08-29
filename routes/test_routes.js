@@ -3,6 +3,7 @@ const {
   getTestForPerform,
   submitTest,
   getSubmittedTest,
+  markQuestionCorrectUnCorrect,
 } = require("../controllers/test_controller");
 const route = express.Router();
 
@@ -140,5 +141,44 @@ route.post("/", verifyToken([candidate_model]), submitTest);
  *         description: Submitted test fetched successfully.
  */
 route.get("/submitted", verifyToken([employer_model]), getSubmittedTest);
+
+/**
+ * @swagger
+ * /api/v1/test/markQuestionCorrectUnCorrect:
+ *   put:
+ *     summary: Mark a question as correct or incorrect
+ *     description: Update the "isCorrect" field for a specific question within a test result.
+ *     tags:
+ *       - Employer/Tests
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               testId:
+ *                 type: string
+ *                 description: The ID of the test result document.
+ *                 example: 66d0bd625e8a5d7b58acfac4
+ *               questionId:
+ *                 type: string
+ *                 description: The ID of the specific question within the test result.
+ *                 example: 66d0bd625e8a5d7b58acfac5
+ *               isCorrect:
+ *                 type: boolean
+ *                 description: Whether the question is marked correct (true) or incorrect (false).
+ *                 example: true
+ *     responses:
+ *       202:
+ *         description: Question updated successfully
+ */
+route.put(
+  "/markQuestionCorrectUnCorrect",
+  verifyToken([employer_model]),
+  markQuestionCorrectUnCorrect
+);
 
 module.exports = route;
