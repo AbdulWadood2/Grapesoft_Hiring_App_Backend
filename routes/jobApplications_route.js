@@ -9,6 +9,8 @@ const {
   rejectedApplication,
   deleteApplication,
   redirectToTest,
+  signContract,
+  getDataForSignContract,
 } = require("../controllers/jobApplications_controller");
 // models
 const employer_model = require("../models/employer_model");
@@ -284,5 +286,75 @@ route.delete(
 );
 
 route.get("/redirectToTest", redirectToTest);
+
+/**
+ * @swagger
+ * /api/v1/jobApplication/signContract:
+ *   post:
+ *     summary: Sign a contract for a job application
+ *     description: Allows a candidate to sign a contract for a specific job application after verifying the necessary documents.
+ *     tags:
+ *       - Candidate/JobApplications
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               jobApplyId:
+ *                 type: string
+ *                 description: The ID of the job application.
+ *                 example: 64e7bfbf57f9f0f7d882e1bc
+ *               governmentIdFront:
+ *                 type: string
+ *                 description: URL or reference to the front image of the government ID.
+ *                 example: https://bucket-name.s3.amazonaws.com/path/to/governmentIdFront.jpg
+ *               governmentIdBack:
+ *                 type: string
+ *                 description: URL or reference to the back image of the government ID.
+ *                 example: https://bucket-name.s3.amazonaws.com/path/to/governmentIdBack.jpg
+ *               proofOfAddress:
+ *                 type: string
+ *                 description: URL or reference to the proof of address image.
+ *                 example: https://bucket-name.s3.amazonaws.com/path/to/proofOfAddress.jpg
+ *               signature:
+ *                 type: string
+ *                 description: URL or reference to the signature image.
+ *                 example: https://bucket-name.s3.amazonaws.com/path/to/signature.jpg
+ *     responses:
+ *       201:
+ *         description: Contract signed successfully
+ */
+route.post("/signContract", verifyToken([candidate_model]), signContract);
+
+/**
+ * @swagger
+ * /api/v1/jobApplication/signContractRequirements:
+ *   get:
+ *     summary: Retrieve data required for signing a contract
+ *     description: Fetches the necessary data for a job application contract signing process, including job application details, submitted test, and contract information.
+ *     tags:
+ *       - Candidate/JobApplications
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: jobApplyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the job application for which to retrieve data.
+ *     responses:
+ *       202:
+ *         description: Contract required data fetched successfully
+ */
+route.get(
+  "/signContractRequirements",
+  verifyToken([candidate_model]),
+  getDataForSignContract
+);
 
 module.exports = route;

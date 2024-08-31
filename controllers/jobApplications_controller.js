@@ -6,11 +6,23 @@ const jobApply_model = require("../models/jobApply_model");
 const job_model = require("../models/job_model");
 const candidate_model = require("../models/candidate_model");
 const submittedTest_model = require("../models/submittedTest_model");
+const signContract_model = require("../models/contract_model");
 
 const { generateSignedUrl } = require("./awsController");
 const { successMessage } = require("../successHandlers/successController");
+// emails for send
 const AcceptedApplicationEmail = require("../emailSender/jobApplication/acceptedApplicationEmail");
 const rejectApplicationEmail = require("../emailSender/jobApplication/rejectApplicationEmail");
+const signContractApplicationEmail = require("../emailSender/jobApplication/signContractEmail");
+
+const {
+  signContractValidationSchema,
+} = require("../validation/contract_joi_validation");
+const {
+  getFileName,
+  checkImageExists,
+  checkDuplicateAwsImgsInRecords,
+} = require("../functions/aws_functions");
 
 // method post
 // endPoint /api/v1/jobApplication/
@@ -326,7 +338,15 @@ const passJobApplication = catchAsync(async (req, res, next) => {
   if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
   jobApplication = JSON.parse(JSON.stringify(jobApplication));
   jobApplication.candidate = candidate;
-  return successMessage(202, res, "job passed", jobApplication);
+  successMessage(202, res, "job passed", jobApplication);
+  await new signContractApplicationEmail(
+    { email: candidate.email },
+    {
+      candidateName: candidate.first_name + " " + candidate.last_name,
+      companyName: req.fullUser.company_name,
+      jobApplyId: jobApplication._id,
+    }
+  ).sendEmail();
 });
 
 // Method PUT
@@ -487,6 +507,142 @@ const redirectToTest = catchAsync(async (req, res, next) => {
   }
 });
 
+// Method POST
+// Endpoint: /api/v1/jobApplication/signContract
+// Description: signContract
+const signContract = catchAsync(async (req, res, next) => {
+  // Validate request body
+  const { error, value } = signContractValidationSchema.validate(req.body);
+  if (error) {
+    const errors = error.details.map((err) => err.message).join(", ");
+    return next(new appError(errors, 400));
+  }
+
+  const {
+    jobApplyId,
+    governmentIdFront,
+    governmentIdBack,
+    proofOfAddress,
+    signature,
+    agreedToTerms,
+  } = value;
+  const jobApplication = await jobApply_model.findOne({
+    _id: jobApplyId,
+    candidateId: req.user.id,
+  });
+  if (!jobApplication) {
+    return next(new appError("job application not found", 400));
+  }
+  if (!(jobApplication.status == 4)) {
+    return next(new appError("not authorize for sign contract", 400));
+  }
+  // Check if the images exist in AWS and are not duplicates
+  const fileChecks = await Promise.all([
+    getFileName([governmentIdFront]),
+    checkImageExists([governmentIdFront]),
+    checkDuplicateAwsImgsInRecords([governmentIdFront]),
+    getFileName([governmentIdBack]),
+    checkImageExists([governmentIdBack]),
+    checkDuplicateAwsImgsInRecords([governmentIdBack]),
+    getFileName([proofOfAddress]),
+    checkImageExists([proofOfAddress]),
+    checkDuplicateAwsImgsInRecords([proofOfAddress]),
+    getFileName([signature]),
+    checkImageExists([signature]),
+    checkDuplicateAwsImgsInRecords([signature]),
+  ]);
+
+  const [
+    [govIdFrontFileName],
+    [govIdFrontExists],
+    govIdFrontDuplicate,
+    [govIdBackFileName],
+    [govIdBackExists],
+    govIdBackDuplicate,
+    [proofOfAddressFileName],
+    [proofOfAddressExists],
+    proofOfAddressDuplicate,
+    [signatureFileName],
+    [signatureExists],
+    signatureDuplicate,
+  ] = fileChecks;
+
+  if (
+    !govIdFrontExists ||
+    !govIdBackExists ||
+    !proofOfAddressExists ||
+    !signatureExists
+  ) {
+    return next(new appError("One or more files do not exist in AWS", 400));
+  }
+
+  if (
+    !govIdFrontDuplicate.success ||
+    !govIdBackDuplicate.success ||
+    !proofOfAddressDuplicate.success ||
+    !signatureDuplicate.success
+  ) {
+    return next(new appError("One or more files are already used", 400));
+  }
+
+  // Create a new contract sign document
+  const newContractSign = await signContract_model.create({
+    jobApplyId,
+    governmentIdFront: govIdFrontFileName,
+    governmentIdBack: govIdBackFileName,
+    proofOfAddress: proofOfAddressFileName,
+    signature: signatureFileName,
+    agreedToTerms,
+  });
+  jobApplication.status = 5;
+  await jobApplication.save();
+
+  return successMessage(
+    201,
+    res,
+    "Contract signed successfully",
+    newContractSign
+  );
+});
+
+// Method GET
+// Endpoint: /api/v1/jobApplication/signContractRequirements
+// Description: Get data for signContract
+const getDataForSignContract = catchAsync(async (req, res, next) => {
+  const jobApplyId = req.query.jobApplyId;
+  const jobApplication = await jobApply_model.findById(jobApplyId);
+  if (!jobApplication) {
+    return next(new appError("Job application not found", 404));
+  }
+  // Check if the job application is in the correct status
+  if (jobApplication.status !== 4) {
+    return next(
+      new appError("Job application is not in the correct status", 400)
+    );
+  }
+  // Get the test
+  const submittedTest = await submittedTest_model
+    .findOne({
+      jobApplyId: jobApplyId,
+    })
+    .select("createdAt");
+  if (!submittedTest) {
+    return next(new appError("Test not found", 400));
+  }
+  const jobContract = await job_model
+    .findOne({
+      _id: jobApplication.jobId,
+    })
+    .select("contract");
+  [jobContract.contract.docs] = await generateSignedUrl([
+    jobContract.contract.docs,
+  ]);
+  return successMessage(202, res, "contract required data fetched", {
+    submittedTest,
+    jobContract: jobContract.contract,
+  });
+});
+
 module.exports = {
   getJobApplications,
   getSingleJobApplication,
@@ -497,4 +653,6 @@ module.exports = {
   rejectedApplication,
   deleteApplication,
   redirectToTest,
+  signContract,
+  getDataForSignContract,
 };

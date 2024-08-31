@@ -61,7 +61,7 @@ module.exports = class rejectApplicationEmail {
     const mailOptions = {
       from: "Grapesoft inteview app",
       to: this.to,
-      subject: "Application accepted",
+      subject: "Application rejected",
       html: html
         .replaceAll("[Company Name]", this.companyName)
         .replaceAll("[Candidate's Name]", this.candidateName)
