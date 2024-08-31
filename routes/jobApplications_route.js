@@ -11,6 +11,7 @@ const {
   redirectToTest,
   signContract,
   getDataForSignContract,
+  getSignContract,
 } = require("../controllers/jobApplications_controller");
 // models
 const employer_model = require("../models/employer_model");
@@ -208,6 +209,12 @@ route.put(
  *           type: string
  *         required: true
  *         description: The ID of the candidate.
+ *       - in: query
+ *         name: jobApplicationId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: jobApplicationId.
  *     responses:
  *       202:
  *         description: Job contract approved.
@@ -356,5 +363,28 @@ route.get(
   verifyToken([candidate_model]),
   getDataForSignContract
 );
+
+/**
+ * @swagger
+ * /api/v1/jobApplication/signContract:
+ *   get:
+ *     summary: Get sign contract details for a job application
+ *     description: Retrieve the contract details for a job application if the application is in the correct status.
+ *     tags:
+ *       - Employer/JobApplications
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: jobApplyId
+ *         required: true
+ *         description: The ID of the job application
+ *         schema:
+ *           type: string
+ *     responses:
+ *       202:
+ *         description: Contract data fetched successfully
+ */
+route.get("/signContract", verifyToken([employer_model]), getSignContract);
 
 module.exports = route;

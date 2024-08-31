@@ -199,14 +199,18 @@ const jobForCandidateAll = catchAsync(async (req, res, next) => {
 
   // Fetch the jobs with pagination
   let jobs = await job_model
-    .find({ privateOrPublic: true, isDeleted: false })
+    .find({ privateOrPublic: true, isDeleted: false, status: true })
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 })
     .lean(); // Assuming you want the newest jobs first
 
   // Get the total number of jobs to calculate the total pages
-  const totalJobs = await job_model.countDocuments({ privateOrPublic: true });
+  const totalJobs = await job_model.countDocuments({
+    privateOrPublic: true,
+    isDeleted: false,
+    status: true,
+  });
   const totalPages = Math.ceil(totalJobs / limit);
   jobs = await Promise.all(
     jobs.map(async (job) => {

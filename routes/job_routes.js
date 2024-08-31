@@ -7,8 +7,12 @@ const {
   deleteJob,
   createJobDraft,
   getJobDraft,
+  jobForCandidateAll,
 } = require("../controllers/job_controller");
+// db models
 const employer_model = require("../models/employer_model");
+const candidate_model = require("../models/candidate_model");
+
 const { verifyToken } = require("../authorization/verifyToken");
 const {
   applyJobCandidate,
@@ -170,8 +174,8 @@ route.get("/", verifyToken([employer_model]), getJobs);
  */
 route.get(
   "/forCandidate/all",
-  verifyToken([employer_model]),
-  applyJobCandidate
+  verifyToken([candidate_model]),
+  jobForCandidateAll
 );
 
 /**

@@ -26,7 +26,7 @@ const {
 
 // method post
 // endPoint /api/v1/jobApplication/
-// description create employer help and guide
+// description get job applications
 const getJobApplications = catchAsync(async (req, res, next) => {
   // Get pagination parameters from the query with default values
   const page = parseInt(req.query.page, 10) || 1; // Current page number
@@ -353,12 +353,15 @@ const passJobApplication = catchAsync(async (req, res, next) => {
 // Endpoint: /api/v1/jobApplication/ContractApproved
 // Description: ContractApproved
 const contractApproved = catchAsync(async (req, res, next) => {
-  const { jobId, candidateId } = req.query;
+  const { jobId, candidateId, jobApplicationId } = req.query;
   if (!jobId) {
     return next(new appError("jobID is required", 400));
   }
   if (!candidateId) {
     return next(new appError("candidateID is required", 400));
+  }
+  if (!jobApplicationId) {
+    return next(new appError("jobApplicationID is required", 400));
   }
   const job = await job_model.findOne({
     _id: jobId,
@@ -367,14 +370,15 @@ const contractApproved = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("job not found or unauthorize", 400));
   }
-  const jobApplication = await jobApply_model.findOne({
+  let jobApplication = await jobApply_model.findOne({
     jobId: jobId,
     candidateId,
+    _id: jobApplicationId,
   });
   if (!(jobApplication.status == 5)) {
     return next(new appError("unauthorize for this action", 400));
   }
-  jobApplication.success == 1;
+  jobApplication.success = 1;
   await jobApplication.save();
   const candidate = await candidate_model
     .findOne({
@@ -390,7 +394,7 @@ const contractApproved = catchAsync(async (req, res, next) => {
   if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
   jobApplication = JSON.parse(JSON.stringify(jobApplication));
   jobApplication.candidate = candidate;
-  return successMessage(202, res, "job passed", jobApplication);
+  return successMessage(202, res, "contract approved", jobApplication);
 });
 
 // Method PUT
@@ -530,6 +534,7 @@ const signContract = catchAsync(async (req, res, next) => {
     _id: jobApplyId,
     candidateId: req.user.id,
   });
+
   if (!jobApplication) {
     return next(new appError("job application not found", 400));
   }
@@ -614,6 +619,7 @@ const getDataForSignContract = catchAsync(async (req, res, next) => {
   if (!jobApplication) {
     return next(new appError("Job application not found", 404));
   }
+
   // Check if the job application is in the correct status
   if (jobApplication.status !== 4) {
     return next(
@@ -643,6 +649,43 @@ const getDataForSignContract = catchAsync(async (req, res, next) => {
   });
 });
 
+// method get
+// endpoint: /api/v1/jobApplication/signContract
+// description: get sign contract
+const getSignContract = catchAsync(async (req, res, next) => {
+  const jobApplyId = req.query.jobApplyId;
+  const jobApplication = await jobApply_model.findById(jobApplyId);
+  if (!jobApplication) {
+    return next(new appError("Job application not found", 400));
+  }
+  // Check if the job application is in the correct status
+  if (!(jobApplication.status == 5)) {
+    return next(new appError("contract not found", 400));
+  }
+  const contract = await signContract_model.findOne({
+    jobApplyId,
+  });
+  const candidate = await candidate_model
+    .findOne({
+      _id: jobApplication.candidateId,
+    })
+    .select("email first_name last_name");
+  [contract.governmentIdFront] = await generateSignedUrl([
+    contract.governmentIdFront,
+  ]);
+  [contract.governmentIdBack] = await generateSignedUrl([
+    contract.governmentIdBack,
+  ]);
+  [contract.proofOfAddress] = await generateSignedUrl([
+    contract.proofOfAddress,
+  ]);
+  [contract.signature] = await generateSignedUrl([contract.signature]);
+  return successMessage(202, res, "contract required data fetched", {
+    ...JSON.parse(JSON.stringify(candidate)),
+    ...JSON.parse(JSON.stringify(contract)),
+  });
+});
+
 module.exports = {
   getJobApplications,
   getSingleJobApplication,
@@ -655,4 +698,5 @@ module.exports = {
   redirectToTest,
   signContract,
   getDataForSignContract,
+  getSignContract,
 };

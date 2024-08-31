@@ -29,7 +29,7 @@ const jobSchema = new mongoose.Schema(
     privateOrPublic: {
       type: Boolean,
       default: true,
-    },
+    }, // true means public
     coverLetter: {
       type: Boolean,
       default: true,

@@ -42,9 +42,6 @@ const getTestForPerform = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("Job not found", 400));
   }
-  if (!job.status) {
-    return next(new appError("Job is not active", 400));
-  }
   const subscription = await subscription_model.findOne({
     employerId: job.employerId,
   });
@@ -106,9 +103,6 @@ const submitTest = catchAsync(async (req, res, next) => {
   });
   if (!job) {
     return next(new appError("Job not found", 400));
-  }
-  if (!job.status) {
-    return next(new appError("Job is not active", 400));
   }
   const subscription = await subscription_model.findOne({
     employerId: job.employerId,
