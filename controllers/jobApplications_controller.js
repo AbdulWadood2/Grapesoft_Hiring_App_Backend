@@ -43,11 +43,12 @@ const getJobApplications = catchAsync(async (req, res, next) => {
   // Count total documents for pagination
   const totalDocuments = await jobApply_model.countDocuments({
     jobId: { $in: allJobsOfMine },
+    isDeleted: { $ne: true },
   });
 
   // Fetch applied jobs with pagination
   let getAllAppliedJobs = await jobApply_model
-    .find({ jobId: { $in: allJobsOfMine } })
+    .find({ jobId: { $in: allJobsOfMine }, isDeleted: { $ne: true } })
     .skip(skip)
     .limit(limit)
     .sort({
@@ -103,7 +104,7 @@ const getSingleJobApplication = catchAsync(async (req, res, next) => {
 
   // Fetch the job application for the specified jobId
   let jobApplication = await jobApply_model
-    .findOne({ _id: jobApplicationId })
+    .findOne({ _id: jobApplicationId, isDeleted: { $ne: true } })
     .lean();
 
   if (!jobApplication) {
@@ -185,7 +186,7 @@ const updateJobApplicationNote = catchAsync(async (req, res, next) => {
   }
   // Update the job application note
   let updatedJobApplication = await jobApply_model.findOneAndUpdate(
-    { jobId, candidateId },
+    { jobId, candidateId, isDeleted: { $ne: true } },
     {
       $set: {
         note: note,
@@ -256,6 +257,7 @@ const acceptJobApplication = catchAsync(async (req, res, next) => {
     jobId: jobId,
     candidateId,
     _id: jobApplicationId,
+    isDeleted: { $ne: true },
   });
   if (!jobApplication) {
     return next(new appError("Job application not found", 400));
@@ -318,6 +320,7 @@ const passJobApplication = catchAsync(async (req, res, next) => {
     jobId: jobId,
     candidateId,
     _id: jobApplicationId,
+    isDeleted: { $ne: true },
   });
   if (!(jobApplication.status == 3)) {
     return next(new appError("unauthorize for action", 400));
@@ -374,6 +377,7 @@ const contractApproved = catchAsync(async (req, res, next) => {
     jobId: jobId,
     candidateId,
     _id: jobApplicationId,
+    isDeleted: { $ne: true },
   });
   if (!(jobApplication.status == 5)) {
     return next(new appError("unauthorize for this action", 400));
@@ -419,6 +423,7 @@ const rejectedApplication = catchAsync(async (req, res, next) => {
     jobId: jobId,
     candidateId,
     _id: jobApplicationId,
+    isDeleted: { $ne: true },
   });
   if (!jobApplication) {
     return next(new appError("jobApplication not found", 400));
@@ -470,14 +475,13 @@ const deleteApplication = catchAsync(async (req, res, next) => {
   if (!job) {
     return next(new appError("job not found or unauthorize", 400));
   }
-  await jobApply_model.findOneAndDelete({
+  const application = await jobApply_model.findOne({
     jobId: jobId,
     candidateId,
   });
-  successMessage(202, res, "qpplication deleted");
-  await submittedTest_model.deleteMany({
-    candidateId: candidateId,
-  });
+  application.isDeleted = true;
+  await application.save();
+  return successMessage(202, res, "qpplication deleted");
 });
 
 // Method GET
@@ -533,6 +537,7 @@ const signContract = catchAsync(async (req, res, next) => {
   const jobApplication = await jobApply_model.findOne({
     _id: jobApplyId,
     candidateId: req.user.id,
+    isDeleted: { $ne: true },
   });
 
   if (!jobApplication) {
@@ -615,7 +620,10 @@ const signContract = catchAsync(async (req, res, next) => {
 // Description: Get data for signContract
 const getDataForSignContract = catchAsync(async (req, res, next) => {
   const jobApplyId = req.query.jobApplyId;
-  const jobApplication = await jobApply_model.findById(jobApplyId);
+  const jobApplication = await jobApply_model.findOne({
+    _id: jobApplyId.toString(),
+    isDeleted: { $ne: true },
+  });
   if (!jobApplication) {
     return next(new appError("Job application not found", 404));
   }
@@ -654,7 +662,10 @@ const getDataForSignContract = catchAsync(async (req, res, next) => {
 // description: get sign contract
 const getSignContract = catchAsync(async (req, res, next) => {
   const jobApplyId = req.query.jobApplyId;
-  const jobApplication = await jobApply_model.findById(jobApplyId);
+  const jobApplication = await jobApply_model.findOne({
+    _id: jobApplyId,
+    isDeleted: { $ne: true },
+  });
   if (!jobApplication) {
     return next(new appError("Job application not found", 400));
   }

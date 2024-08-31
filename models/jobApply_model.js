@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 
 const jobApplySchema = new mongoose.Schema(
   {
+    employerId: { type: mongoose.Schema.Types.ObjectId, required: true },
     candidateId: { type: mongoose.Schema.Types.ObjectId, required: true },
     jobId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -59,6 +60,10 @@ const jobApplySchema = new mongoose.Schema(
     note: {
       type: String,
       default: null,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
     },
   },
   {

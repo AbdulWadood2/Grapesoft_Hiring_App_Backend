@@ -10,6 +10,7 @@ const {
   completeProfileWithPassword,
   sendVerifyEmailOTP,
   verifyAccountByOTP,
+  candidateDashboard,
 } = require("../controllers/candidate_controller");
 const candidate = require("../models/candidate_model");
 const authenticationController = require("../controllers/authentication_controller");
@@ -389,5 +390,21 @@ route.post("/verifyAccountByOTP", verifyAccountByOTP);
  *         description: Profile updated successfully.
  */
 route.post("/password", completeProfileWithPassword);
+
+/**
+ * @swagger
+ * /api/v1/candidate/dashboard:
+ *   get:
+ *     summary: Get candidate dashboard data
+ *     description: Fetches statistics related to the candidate's job applications.
+ *     tags:
+ *       - Candidate/account
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Candidate dashboard data fetched successfully.
+ */
+route.get("/dashboard", candidateDashboard);
 
 module.exports = route;

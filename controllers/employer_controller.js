@@ -7,6 +7,8 @@ const appError = require("../errorHandlers/appError");
 const employer_model = require("../models/employer_model");
 const package_model = require("../models/package_model");
 const subscription_model = require("../models/subscription_model");
+const job_model = require("../models/job_model.js");
+const jobApply_model = require("../models/jobApply_model.js");
 // sign access token
 const {
   generateAccessTokenRefreshToken,
@@ -306,6 +308,63 @@ const changePasswordManually = catchAsync(async (req, res, next) => {
   successMessage(202, res, `your password has been changed successfully`);
 });
 
+// method get
+// endpoint /api/v1/employer/dashboard
+// description employer dashboard
+const getEmployerDashboard = catchAsync(async (req, res, next) => {
+  const [jobs, jobApplications] = await Promise.all([
+    job_model
+      .find({
+        employerId: req.user.id,
+      })
+      .select("status privateOrPublic"),
+    jobApply_model
+      .find({
+        employerId: req.user.id,
+      })
+      .select("status success"),
+  ]);
+
+  // Calculate jobs statistics
+  const totalJobs = jobs.length;
+  const activeJobs = jobs.filter((job) => job.status === true).length;
+  const publicJobs = jobs.filter((job) => job.privateOrPublic === true).length;
+  const privateJobs = jobs.filter(
+    (job) => job.privateOrPublic === false
+  ).length;
+
+  // Calculate job applications statistics
+  const totalJobApplications = jobApplications.length;
+  const testCompletedApplications = jobApplications.filter(
+    (application) => application.status >= 3
+  ).length;
+  const contractSignedApplications = jobApplications.filter(
+    (application) => application.status >= 5
+  ).length;
+  const rejectedApplications = jobApplications.filter(
+    (application) => application.success === 2
+  ).length;
+
+  // Construct the response
+  const response = {
+    jobs: {
+      total: totalJobs,
+      active: activeJobs,
+      public: publicJobs,
+      private: privateJobs,
+    },
+    jobApplications: {
+      total: totalJobApplications,
+      testCompleted: testCompletedApplications,
+      contractSigned: contractSignedApplications,
+      rejected: rejectedApplications,
+    },
+  };
+
+  // Send the response
+  return successMessage(200, res, "Employer dashboard data fetched", response);
+});
+
 module.exports = {
   signUpEmployer,
   logInEmployer,
@@ -315,4 +374,5 @@ module.exports = {
   resetPassword,
   updateProfile,
   changePasswordManually,
+  getEmployerDashboard,
 };

@@ -20,7 +20,7 @@ const {
 const CryptoJS = require("crypto-js");
 // models
 const candidate_model = require("../models/candidate_model");
-const job = require("../models/job_model");
+const jobApply_model = require("../models/jobApply_model.js");
 // gererate signed url
 const { generateSignedUrl } = require("./awsController");
 const { generateRandomNumber } = require("../functions/randomDigits_functions");
@@ -462,6 +462,42 @@ const completeProfileWithPassword = catchAsync(async (req, res, next) => {
   });
 });
 
+// method get
+// endpoint /api/v1/candidate/dashboard
+// desc get candidate dashboard
+const candidateDashboard = catchAsync(async (req, res, next) => {
+  // Fetch all job applications for the candidate
+  const jobApplications = await jobApply_model
+    .find({
+      candidateId: req.user._id.toString(),
+    })
+    .select("success status");
+
+  // Calculate the desired counts
+  const totalApplications = jobApplications.length;
+  const totalTestsTaken = jobApplications.filter(
+    (application) => application.status === 3
+  ).length;
+  const totalTestsPassed = jobApplications.filter(
+    (application) => application.status === 4
+  ).length;
+  const totalContractsJobOffers = jobApplications.filter(
+    (application) => application.success === 1
+  ).length;
+
+  // Create the response object
+  const dashboardData = {
+    totalApplications,
+    totalTestsTaken,
+    totalTestsPassed,
+    totalContractsJobOffers,
+  };
+
+  // Send the response
+
+  return successMessage(400, res, "dashboard fetched", dashboardData);
+});
+
 module.exports = {
   signUpCandidate,
   logInCandidate,
@@ -473,4 +509,5 @@ module.exports = {
   sendVerifyEmailOTP,
   verifyAccountByOTP,
   completeProfileWithPassword,
+  candidateDashboard
 };

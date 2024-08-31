@@ -8,6 +8,7 @@ const {
   resetPassword,
   updateProfile,
   changePasswordManually,
+  getEmployerDashboard,
 } = require("../controllers/employer_controller");
 const multer = require("multer");
 const employer = require("../models/employer_model");
@@ -287,5 +288,21 @@ route.post(
   verifyToken([employer]),
   changePasswordManually
 );
+
+/**
+ * @swagger
+ * /api/v1/employer/dashboard:
+ *   get:
+ *     summary: Get employer dashboard data
+ *     description: Fetches statistics related to the employer's jobs and job applications.
+ *     tags:
+ *       - Employer/account
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Employer dashboard data fetched successfully.
+ */
+route.get("/dashboard", verifyToken([employer]), getEmployerDashboard);
 
 module.exports = route;

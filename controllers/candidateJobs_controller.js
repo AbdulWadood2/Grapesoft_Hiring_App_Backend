@@ -31,15 +31,11 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
     const errors = error.details.map((el) => el.message).join(", ");
     return next(new appError(errors, 400));
   }
-  const [job, candidate, jobApply] = await Promise.all([
+  const [job, candidate] = await Promise.all([
     job_model.findOne({
       _id: value.jobId,
     }),
     candidate_model.findOne({
-      email: value.email,
-    }),
-    jobApply_model.findOne({
-      jobId: value.jobId,
       email: value.email,
     }),
   ]);
@@ -135,6 +131,7 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
       coverLetter: value.coverLetter,
     });
     await jobApply_model.create({
+      employerId: job.employerId,
       jobId: value.jobId,
       candidateId: newCandidate._id,
       first_name: value.first_name,
@@ -187,12 +184,14 @@ const getCandidateJobApplications = catchAsync(async (req, res, next) => {
   // Fetch total count of job applications for the candidate
   const totalDocuments = await jobApply_model.countDocuments({
     candidateId: req.user.id,
+    isDeleted: { $ne: true },
   });
 
   // Fetch the paginated job applications
   let jobApplications = await jobApply_model
     .find({
       candidateId: req.user.id,
+      isDeleted: { $ne: true },
     })
     .sort({
       createdAt: -1,
