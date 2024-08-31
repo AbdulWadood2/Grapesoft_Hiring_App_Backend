@@ -23,30 +23,40 @@ const employer_model = require("../models/employer_model.js");
 const job_model = require("../models/job_model.js");
 const helpguideemployer_model = require("../models/help&guideEmployer_model.js");
 const jobApply_model = require("../models/jobApply_model.js");
+const contract_model = require("../models/contract_model.js");
 
 // functions
 const checkDuplicateAwsImgsInRecords = async (fileNames, fieldName) => {
   try {
     const promises = fileNames.map(async (fileName) => {
-      const [employerAvatar, job, helpguideemployer] = await Promise.all([
-        employer_model.findOne({ avatar: fileName }),
-        job_model.findOne({
-          $or: [
-            { "specification.video": fileName },
-            { "specification.docs": fileName },
-            { "training.video": fileName },
-            { "training.docs": fileName },
-            { "contract.video": fileName },
-          ],
-        }),
-        helpguideemployer_model.findOne({
-          video: fileName,
-        }),
-        jobApply_model.findOne({
-          $or: [{ aboutVideo: fileName }, { cv: fileName }],
-        }),
-      ]);
-      if (employerAvatar || job || helpguideemployer) {
+      const [employerAvatar, job, helpguideemployer, jobApply, contract] =
+        await Promise.all([
+          employer_model.findOne({ avatar: fileName }),
+          job_model.findOne({
+            $or: [
+              { "specification.video": fileName },
+              { "specification.docs": fileName },
+              { "training.video": fileName },
+              { "training.docs": fileName },
+              { "contract.video": fileName },
+            ],
+          }),
+          helpguideemployer_model.findOne({
+            video: fileName,
+          }),
+          jobApply_model.findOne({
+            $or: [{ aboutVideo: fileName }, { cv: fileName }],
+          }),
+          contract_model.findOne({
+            $or: [
+              { governmentIdFront: fileName },
+              { governmentIdBack: fileName },
+              { proofOfAddress: fileName },
+              { signature: fileName },
+            ],
+          }),
+        ]);
+      if (employerAvatar || job || helpguideemployer || jobApply || contract) {
         return fileName;
       }
     });
