@@ -69,7 +69,7 @@ route.get("/", verifyToken([employer_model]), getJobApplications);
  */
 route.get(
   "/singleProduct",
-  verifyToken([employer_model]),
+  verifyToken([employer_model, candidate_model]),
   getSingleJobApplication
 );
 
@@ -372,6 +372,7 @@ route.get(
  *     description: Retrieve the contract details for a job application if the application is in the correct status.
  *     tags:
  *       - Employer/JobApplications
+ *       - Candidate/JobApplications
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -385,6 +386,10 @@ route.get(
  *       202:
  *         description: Contract data fetched successfully
  */
-route.get("/signContract", verifyToken([employer_model]), getSignContract);
+route.get(
+  "/signContract",
+  verifyToken([employer_model, candidate_model]),
+  getSignContract
+);
 
 module.exports = route;
