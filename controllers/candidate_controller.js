@@ -469,17 +469,17 @@ const candidateDashboard = catchAsync(async (req, res, next) => {
   // Fetch all job applications for the candidate
   const jobApplications = await jobApply_model
     .find({
-      candidateId: req.user._id.toString(),
+      candidateId: req.user.id.toString(),
     })
     .select("success status");
 
   // Calculate the desired counts
   const totalApplications = jobApplications.length;
   const totalTestsTaken = jobApplications.filter(
-    (application) => application.status === 3
+    (application) => application.status >= 3
   ).length;
   const totalTestsPassed = jobApplications.filter(
-    (application) => application.status === 4
+    (application) => application.status >= 4
   ).length;
   const totalContractsJobOffers = jobApplications.filter(
     (application) => application.success === 1
@@ -495,7 +495,7 @@ const candidateDashboard = catchAsync(async (req, res, next) => {
 
   // Send the response
 
-  return successMessage(400, res, "dashboard fetched", dashboardData);
+  return successMessage(200, res, "dashboard fetched", dashboardData);
 });
 
 module.exports = {

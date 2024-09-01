@@ -405,6 +405,6 @@ route.post("/password", completeProfileWithPassword);
  *       200:
  *         description: Candidate dashboard data fetched successfully.
  */
-route.get("/dashboard", candidateDashboard);
+route.get("/dashboard", verifyToken([candidate]), candidateDashboard);
 
 module.exports = route;

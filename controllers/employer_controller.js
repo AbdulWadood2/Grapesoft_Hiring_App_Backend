@@ -316,6 +316,7 @@ const getEmployerDashboard = catchAsync(async (req, res, next) => {
     job_model
       .find({
         employerId: req.user.id,
+        isDeleted: false,
       })
       .select("status privateOrPublic"),
     jobApply_model
