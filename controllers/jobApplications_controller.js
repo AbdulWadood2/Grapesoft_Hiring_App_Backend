@@ -5,8 +5,10 @@ const appError = require("../errorHandlers/appError");
 const jobApply_model = require("../models/jobApply_model");
 const job_model = require("../models/job_model");
 const candidate_model = require("../models/candidate_model");
+const employer_model = require("../models/employer_model");
 const submittedTest_model = require("../models/submittedTest_model");
 const signContract_model = require("../models/contract_model");
+const notification_model = require("../models/notification_model");
 
 const { generateSignedUrl } = require("./awsController");
 const { successMessage } = require("../successHandlers/successController");
@@ -23,6 +25,7 @@ const {
   checkImageExists,
   checkDuplicateAwsImgsInRecords,
 } = require("../functions/aws_functions");
+const CandidateSignedContractEmail = require("../emailSender/jobApplication/candidateSignContractEmail");
 
 // method post
 // endPoint /api/v1/jobApplication/
@@ -293,6 +296,12 @@ const acceptJobApplication = catchAsync(async (req, res, next) => {
       employerName: req.fullUser.first_name + " " + req.fullUser.last_name,
     }
   ).sendEmail();
+  await notification_model.create({
+    senderId: req.user.id,
+    receiverId: candidate._id,
+    message: "application accepted",
+    description: "your application for " + job.title + " has been accepted",
+  });
 });
 
 // Method PUT
@@ -350,6 +359,12 @@ const passJobApplication = catchAsync(async (req, res, next) => {
       jobApplyId: jobApplication._id,
     }
   ).sendEmail();
+  await notification_model.create({
+    senderId: req.user.id,
+    receiverId: candidate._id,
+    message: "Test Passed",
+    description: `Dear ${candidate.first_name} ${candidate.last_name},Congratulations on passing the test for the position of ${job.title}`,
+  });
 });
 
 // Method PUT
@@ -398,7 +413,13 @@ const contractApproved = catchAsync(async (req, res, next) => {
   if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
   jobApplication = JSON.parse(JSON.stringify(jobApplication));
   jobApplication.candidate = candidate;
-  return successMessage(202, res, "contract approved", jobApplication);
+  successMessage(202, res, "contract approved", jobApplication);
+  await notification_model.create({
+    senderId: req.user.id,
+    receiverId: candidate._id,
+    message: "contract approved",
+    description: "contract approved for job " + job.title + " contractApproved",
+  });
 });
 
 // Method PUT
@@ -458,6 +479,17 @@ const rejectedApplication = catchAsync(async (req, res, next) => {
       jobTitle: job.title,
     }
   ).sendEmail();
+  await notification_model.create({
+    senderId: req.user.id,
+    receiverId: candidate._id,
+    message: "Application Rejected",
+    description:
+      "Your application for " +
+      job.title +
+      " at " +
+      req.fullUser.company_name +
+      " has been rejected",
+  });
 });
 
 // Method DELETE
@@ -480,8 +512,35 @@ const deleteApplication = catchAsync(async (req, res, next) => {
     candidateId,
   });
   application.isDeleted = true;
+  if (application.status !== 5) {
+    application.success = 2;
+  }
   await application.save();
-  return successMessage(202, res, "qpplication deleted");
+  successMessage(202, res, "application deleted");
+  const candidate = await candidate_model.findOne({
+    _id: application.candidateId,
+  });
+  if (application.status !== 5) {
+    await new rejectApplicationEmail(
+      { email: candidate.email },
+      {
+        companyName: req.fullUser.company_name,
+        candidateName: candidate.first_name + " " + candidate.last_name,
+        jobTitle: job.title,
+      }
+    ).sendEmail();
+    await notification_model.create({
+      senderId: req.user.id,
+      receiverId: candidate._id,
+      message: "Application Rejected",
+      description:
+        "Your application for " +
+        job.title +
+        " at " +
+        req.fullUser.company_name +
+        " has been rejected",
+    });
+  }
 });
 
 // Method GET
@@ -607,12 +666,37 @@ const signContract = catchAsync(async (req, res, next) => {
   jobApplication.status = 5;
   await jobApplication.save();
 
-  return successMessage(
-    201,
-    res,
-    "Contract signed successfully",
-    newContractSign
-  );
+  successMessage(201, res, "Contract signed successfully", newContractSign);
+
+  const [employer, candidate, job] = await Promise.all([
+    employer_model.findOne({
+      _id: jobApplication.employerId,
+    }),
+    candidate_model.findOne({
+      _id: jobApplication.candidateId,
+    }),
+    job_model.findOne({
+      _id: jobApplication.jobId,
+    }),
+  ]);
+  if (employer.ContractSigned) {
+    await new CandidateSignedContractEmail(
+      { email: employer.email },
+      {
+        candidateName: candidate.first_name + " " + candidate.last_name,
+        employerName: employer.first_name + " " + employer.last_name,
+        jobTitle: job.title,
+        jobApplyId: jobApplication._id,
+        companyName: employer.company_name,
+      }
+    ).sendEmail();
+  }
+  await notification_model.create({
+    senderId: candidate._id,
+    receiverId: employer._id,
+    message: "contract signed",
+    description: "Contract signed for job application " + job.title,
+  });
 });
 
 // Method GET

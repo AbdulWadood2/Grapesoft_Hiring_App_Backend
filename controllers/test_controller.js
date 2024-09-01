@@ -9,6 +9,9 @@ const job_model = require("../models/job_model");
 const jobApply_model = require("../models/jobApply_model.js");
 const submittedTest_model = require("../models/submittedTest_model");
 const subscription_model = require("../models/subscription_model.js");
+const employer_model = require("../models/employer_model.js");
+const candidate_model = require("../models/candidate_model.js");
+const notification_model = require("../models/notification_model.js");
 // generate signed url
 const { generateSignedUrl } = require("../controllers/awsController.js");
 // const
@@ -17,6 +20,7 @@ const { successMessage } = require("../successHandlers/successController");
 const {
   submittest_question_validation,
 } = require("../validation/testBuilder_joi_validation.js");
+const TestCompletedEmail = require("../emailSender/jobApplication/testTakenEmail.js");
 
 // method get
 // endPoint /api/v1/test
@@ -127,6 +131,37 @@ const submitTest = catchAsync(async (req, res, next) => {
   subscription.currentPackage.packageStatus.numberOfCredits =
     subscription.currentPackage.packageStatus.numberOfCredits - 1;
   await subscription.save();
+  const [employer, candidate] = await Promise.all([
+    employer_model.findOne({
+      _id: jobApplication.employerId,
+    }),
+    candidate_model.findOne({
+      _id: jobApplication.candidateId,
+    }),
+  ]);
+  if (employer.TestTaken) {
+    await new TestCompletedEmail(
+      { email: employer.email },
+      {
+        employerName: employer.first_name + " " + employer.last_name,
+        candidateName: candidate.first_name + " " + candidate.last_name,
+        jobTitle: job.title,
+        jobApplyId: jobApplication._id,
+      }
+    ).sendEmail();
+  }
+  await notification_model.create({
+    senderId: candidate._id,
+    receiverId: employer._id,
+    message: "test taken",
+    description:
+      "test taken for job " +
+      job.title +
+      " by " +
+      candidate.first_name +
+      " " +
+      candidate.last_name,
+  });
 });
 
 // method get

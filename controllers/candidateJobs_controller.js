@@ -10,16 +10,17 @@ const {
 } = require("../validation/candidate_joi_validation");
 // models
 const candidate_model = require("../models/candidate_model");
+const employer_model = require("../models/employer_model.js");
 const job_model = require("../models/job_model");
 const jobApply_model = require("../models/jobApply_model.js");
+const notification_model = require("../models/notification_model.js");
 // gererate signed url
-const { generateSignedUrl } = require("./awsController");
-const { generateRandomNumber } = require("../functions/randomDigits_functions");
 const {
   getFileName,
   checkImageExists,
   checkDuplicateAwsImgsInRecords,
 } = require("../functions/aws_functions.js");
+const NewApplicationEmail = require("../emailSender/jobApplication/newApplicationEmail.js");
 
 // method post
 // endPoint /api/v1/candidateJob/apply/
@@ -117,6 +118,7 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
       return next(new appError("About Video is required", 400));
     }
   }
+  let jobApplication;
   if (!candidate) {
     const newCandidate = await candidate_model.create({
       first_name: value.first_name,
@@ -130,7 +132,7 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
       cv: value.cv,
       coverLetter: value.coverLetter,
     });
-    await jobApply_model.create({
+    jobApplication = await jobApply_model.create({
       employerId: job.employerId,
       jobId: value.jobId,
       candidateId: newCandidate._id,
@@ -147,7 +149,8 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
       coverLetter: value.coverLetter,
     });
   } else {
-    await jobApply_model.create({
+    jobApplication = await jobApply_model.create({
+      employerId: job.employerId,
       jobId: job._id,
       candidateId: candidate._id,
       first_name: value.first_name,
@@ -165,7 +168,27 @@ const applyJobCandidate = catchAsync(async (req, res, next) => {
   }
 
   // send response
-  return successMessage(202, res, "job apply successfully", null);
+  successMessage(202, res, "job apply successfully", null);
+  const employer = await employer_model.findOne({
+    _id: job.employerId,
+  });
+  if (employer.NewApplication) {
+    await new NewApplicationEmail(
+      { email: employer.email },
+      {
+        employerName: employer.first_name + " " + employer.last_name,
+        candidateName: candidate.first_name + " " + candidate.last_name,
+        jobTitle: job.title,
+        jobApplyId: jobApplication._id,
+      }
+    ).sendEmail();
+  }
+  await notification_model.create({
+    senderId: candidate._id,
+    receiverId: employer._id,
+    message: "new job application for",
+    description: "You have a new job application for " + job.title,
+  });
 });
 
 // method get
