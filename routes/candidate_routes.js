@@ -11,8 +11,13 @@ const {
   sendVerifyEmailOTP,
   verifyAccountByOTP,
   candidateDashboard,
+  candidateAdminDashboard,
+  toggleCandidateBlockStatus,
 } = require("../controllers/candidate_controller");
+// model
 const candidate = require("../models/candidate_model");
+const admin_model = require("../models/admin_model");
+
 const authenticationController = require("../controllers/authentication_controller");
 const { verifyToken } = require("../authorization/verifyToken");
 const route = express.Router();
@@ -406,5 +411,71 @@ route.post("/password", completeProfileWithPassword);
  *         description: Candidate dashboard data fetched successfully.
  */
 route.get("/dashboard", verifyToken([candidate]), candidateDashboard);
+
+/**
+ * @swagger
+ * /api/v1/candidate/admin:
+ *   get:
+ *     summary: Get candidates for admin dashboard with pagination and filters.
+ *     description: Fetch candidates based on the provided filters (all, enabled, disabled) and paginate results.
+ *     tags:
+ *       - Candidate/account
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: Page number for pagination (default is 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: Number of candidates per page (default is 10)
+ *       - in: query
+ *         name: filter
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: Filter candidates by status (0 = all, 1 = enabled, 2 = disabled)
+ *     responses:
+ *       200:
+ *         description: Successfully fetched candidates with pagination and filters.
+ */
+route.get("/admin", verifyToken([admin_model]), candidateAdminDashboard);
+
+/**
+ * @swagger
+ * /api/v1/candidate/toggleBlock:
+ *   put:
+ *     summary: Toggle the blocked status of a candidate
+ *     description: Toggles the blocked status (enabled/disabled) of a candidate by their ID using query parameters.
+ *     tags:
+ *       - Candidate/account
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           description: The candidate ID
+ *     responses:
+ *       200:
+ *         description: Candidate status toggled successfully
+ *       400:
+ *         description: Candidate ID is required
+ *       404:
+ *         description: Candidate not found
+ */
+route.put(
+  "/toggleBlock",
+  verifyToken([admin_model]),
+  toggleCandidateBlockStatus
+);
 
 module.exports = route;

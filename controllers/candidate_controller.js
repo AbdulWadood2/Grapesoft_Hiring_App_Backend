@@ -498,6 +498,96 @@ const candidateDashboard = catchAsync(async (req, res, next) => {
   return successMessage(200, res, "dashboard fetched", dashboardData);
 });
 
+// method get
+// endpoint /api/v1/candidate/admin
+// desc get candidate admin dashboard
+const candidateAdminDashboard = catchAsync(async (req, res, next) => {
+  // Get page, limit, and filter from query params, set defaults if not provided
+  const page = parseInt(req.query.page, 10) || 1; // Default page is 1
+  const limit = parseInt(req.query.limit, 10) || 10; // Default limit is 10
+  const filter = parseInt(req.query.filter, 10) || 0; // Default filter is 0 (all)
+
+  // Calculate the number of documents to skip
+  const skip = (page - 1) * limit;
+
+  // Build the query filter based on the filter parameter
+  let query = {};
+  if (filter === 1) {
+    // Enabled candidates (isBlocked = false)
+    query.isBlocked = false;
+  } else if (filter === 2) {
+    // Disabled candidates (isBlocked = true)
+    query.isBlocked = true;
+  }
+  // If filter is 0, query remains empty to fetch all candidates
+
+  // Fetch all candidates with pagination and filter
+  const totalDocuments = await candidate_model.countDocuments(query); // Count total documents matching the filter
+  let candidates = await candidate_model
+    .find(query)
+    .sort({ createdAt: -1 })
+    .select("-password -refreshToken")
+    .skip(skip)
+    .limit(limit);
+
+  // Generate signed URLs for avatars
+  candidates = await Promise.all(
+    candidates.map(async (candidate) => {
+      [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
+      return candidate;
+    })
+  );
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalDocuments / limit);
+
+  // Create the response object with pagination and filter info
+  const response = {
+    candidates,
+    pagination: {
+      totalDocuments,
+      totalPages,
+      currentPage: page,
+      pageSize: limit,
+    },
+  };
+
+  // Send the response
+  return successMessage(202, res, "Candidates fetched successfully", response);
+});
+
+// method put
+// endpoint /api/v1/candidate/toggleBlock
+// description Toggle the blocked status of a candidate
+const toggleCandidateBlockStatus = catchAsync(async (req, res, next) => {
+  // Get the candidate ID from the query parameter
+  const { id } = req.query;
+
+  // Check if the ID is provided
+  if (!id) {
+    return next(new appError("Candidate ID is required", 400));
+  }
+
+  // Find the candidate by ID
+  const candidate = await candidate_model.findById(id);
+
+  // If candidate not found, return an error
+  if (!candidate) {
+    return next(new appError("Candidate not found", 404));
+  }
+
+  // Toggle the isBlocked status using the ! operator
+  candidate.isBlocked = !candidate.isBlocked;
+
+  // Save the updated candidate document
+  await candidate.save();
+
+  // Send a success message with the updated candidate status
+  return successMessage(200, res, "Candidate status toggled successfully", {
+    isBlocked: candidate.isBlocked,
+  });
+});
+
 module.exports = {
   signUpCandidate,
   logInCandidate,
@@ -509,5 +599,7 @@ module.exports = {
   sendVerifyEmailOTP,
   verifyAccountByOTP,
   completeProfileWithPassword,
-  candidateDashboard
+  candidateDashboard,
+  candidateAdminDashboard,
+  toggleCandidateBlockStatus,
 };

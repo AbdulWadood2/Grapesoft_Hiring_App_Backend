@@ -36,6 +36,14 @@ const employerSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

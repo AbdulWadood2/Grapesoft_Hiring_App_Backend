@@ -51,11 +51,11 @@ const verifyToken = (model) => async (req, res, next) => {
     if (!user) {
       return next(new AppError("Invalid user", 401));
     }
-    if (user.isBlock) {
+    if (user.isBlocked) {
       return next(new AppError("you are block", 401));
     }
     if (user.isDeleted) {
-      return next(new AppError("user not found", 401));
+      return next(new AppError("user is deleted", 401));
     }
     const payloadunique = [];
     // Create an array of promises to verify each token
@@ -94,6 +94,12 @@ const refreshToken = (model) =>
     let user = await model.findOne({ refreshToken: refreshToken });
     if (!user) {
       throw new Error("you are not login");
+    }
+    if (user.isBlocked) {
+      return next(new AppError("you are block", 401));
+    }
+    if (user.isDeleted) {
+      return next(new AppError("user is deleted", 401));
     }
     let payload = JWT.verify(refreshToken, process.env.JWT_SEC);
     const newAccessToken = signAccessToken(user._id, payload.uniqueId);

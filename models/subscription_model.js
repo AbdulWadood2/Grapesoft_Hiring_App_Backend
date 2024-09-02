@@ -57,6 +57,10 @@ const subscriptionSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
+        numberOfCreditsAdminCustomAdded: {
+          type: Number,
+          default: 0,
+        },
         type: {
           type: Number,
           default: 1, // 0 free trial , 1 paid
@@ -121,6 +125,10 @@ const subscriptionSchema = new mongoose.Schema(
           numberOfCredits: {
             type: Number,
             required: true,
+          },
+          numberOfCreditsAdminCustomAdded: {
+            type: Number,
+            default: 0,
           },
           type: {
             type: Number,
