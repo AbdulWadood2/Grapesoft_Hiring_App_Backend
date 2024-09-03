@@ -522,9 +522,15 @@ const candidateAdminDashboard = catchAsync(async (req, res, next) => {
   // If filter is 0, query remains empty to fetch all candidates
 
   // Fetch all candidates with pagination and filter
-  const totalDocuments = await candidate_model.countDocuments(query); // Count total documents matching the filter
+  const totalDocuments = await candidate_model.countDocuments({
+    ...query,
+    isDeleted: false,
+  }); // Count total documents matching the filter
   let candidates = await candidate_model
-    .find(query)
+    .find({
+      ...query,
+      isDeleted: false,
+    })
     .sort({ createdAt: -1 })
     .select("-password -refreshToken")
     .skip(skip)
@@ -588,6 +594,76 @@ const toggleCandidateBlockStatus = catchAsync(async (req, res, next) => {
   });
 });
 
+// Method DELETE
+// Endpoint /api/v1/candidate?id={candidateId}
+// Description: Soft delete a candidate by setting isDeleted to true using a query parameter
+const softDeleteCandidateByQuery = catchAsync(async (req, res, next) => {
+  const { id } = req.query; // Extract candidate ID from query parameters
+
+  if (!id) {
+    return next(new appError("Candidate ID is required", 400)); // Return error if ID is not provided
+  }
+
+  // Find and update the candidate's isDeleted field to true
+  const candidate = await candidate_model.findByIdAndUpdate(
+    id,
+    { isDeleted: true },
+    { new: true }
+  );
+
+  // If candidate not found, send a 404 error
+  if (!candidate) {
+    return next(new appError("Candidate not found", 400));
+  }
+
+  // Send success response
+  return successMessage(200, res, "Candidate soft deleted successfully");
+});
+
+// Method PUT
+// Endpoint /api/v1/candidate/update-email
+// Description: Update candidate email by candidate_id
+const updateCandidateEmailById = catchAsync(async (req, res, next) => {
+  const { candidateId, newEmail } = req.body; // Extract candidate ID and new email from request body
+
+  // Validate request body parameters
+  if (!candidateId || !newEmail) {
+    return next(new appError("Candidate ID and new email are required", 400));
+  }
+
+  // Check if the new email already exists for a different candidate
+  const existingCandidate = await candidate_model.findOne({
+    email: newEmail,
+    _id: { $ne: candidateId }, // Exclude the current candidate by ID
+  });
+
+  if (existingCandidate) {
+    return next(
+      new appError("Email already exists for another candidate", 400)
+    );
+  }
+
+  // Update the candidate's email
+  const candidate = await candidate_model.findByIdAndUpdate(
+    candidateId,
+    { email: newEmail },
+    { new: true, runValidators: true }
+  );
+
+  // If candidate not found, send a 404 error
+  if (!candidate) {
+    return next(new appError("Candidate not found", 400));
+  }
+
+  // Send success response
+  return successMessage(
+    200,
+    res,
+    "Candidate email updated successfully",
+    candidate
+  );
+});
+
 module.exports = {
   signUpCandidate,
   logInCandidate,
@@ -602,4 +678,6 @@ module.exports = {
   candidateDashboard,
   candidateAdminDashboard,
   toggleCandidateBlockStatus,
+  softDeleteCandidateByQuery,
+  updateCandidateEmailById,
 };

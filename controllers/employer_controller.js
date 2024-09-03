@@ -366,6 +366,151 @@ const getEmployerDashboard = catchAsync(async (req, res, next) => {
   return successMessage(200, res, "Employer dashboard data fetched", response);
 });
 
+// Method GET
+// Endpoint /api/v1/employer/admin
+// Description: Get employer admin dashboard with current package details
+const getEmployerAdminDashboard = catchAsync(async (req, res, next) => {
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const filter = parseInt(req.query.filter, 10) || 0;
+
+  const skip = (page - 1) * limit;
+
+  let query = { isDeleted: false }; // Default query to exclude deleted employers
+  if (filter === 1) {
+    query.isBlocked = false; // Enabled employers
+  } else if (filter === 2) {
+    query.isBlocked = true; // Disabled employers
+  }
+
+  const totalDocuments = await employer_model.countDocuments({
+    ...query,
+    isDeleted: false,
+  });
+  let employers = await employer_model
+    .find({
+      ...query,
+      isDeleted: false,
+    })
+    .sort({ createdAt: -1 })
+    .select("-password -refreshToken -encryptOTP")
+    .skip(skip)
+    .limit(limit)
+    .populate("currentPackage");
+
+  const totalPages = Math.ceil(totalDocuments / limit);
+
+  const response = {
+    employers,
+    pagination: {
+      totalDocuments,
+      totalPages,
+      currentPage: page,
+      pageSize: limit,
+    },
+  };
+
+  return successMessage(202, res, "Employers fetched successfully", response);
+});
+
+// Method PUT
+// Endpoint /api/v1/employer/toggle-status
+// Description: Enable or disable an employer by toggling the isBlocked status
+const toggleEmployerStatus = catchAsync(async (req, res, next) => {
+  const employerId = req.query.employerId;
+
+  if (!employerId) {
+    return next(new appError("Employer ID is required", 400));
+  }
+
+  const employer = await employer_model.findById(employerId);
+  if (!employer) {
+    return next(new appError("Employer not found", 400));
+  }
+
+  employer.isBlocked = !employer.isBlocked;
+  await employer.save();
+
+  return successMessage(
+    200,
+    res,
+    `Employer ${employer.isBlocked ? "disabled" : "enabled"} successfully`,
+    employer
+  );
+});
+
+// Method DELETE
+// Endpoint /api/v1/employer/delete
+// Description: Soft delete an employer by setting isDeleted to true
+const deleteEmployer = catchAsync(async (req, res, next) => {
+  const employerId = req.query.employerId;
+
+  if (!employerId) {
+    return next(new appError("Employer ID is required", 400));
+  }
+
+  const employer = await employer_model.findById(employerId);
+  if (!employer) {
+    return next(new appError("Employer not found", 400));
+  }
+
+  employer.isDeleted = true;
+  await employer.save();
+
+  return successMessage(200, res, "Employer deleted successfully");
+});
+
+// Method PUT
+// Endpoint /api/v1/employer/update
+// Description: Update employer email and credits
+const updateEmployerEmailAndCredits = catchAsync(async (req, res, next) => {
+  const { employerId, newEmail, credits } = req.body;
+
+  if (!employerId || !newEmail || !credits) {
+    return next(
+      new appError("Employer ID and new email and credits are required", 400)
+    );
+  }
+
+  const existingEmployer = await employer_model.findOne({
+    email: newEmail,
+    _id: { $ne: employerId },
+  });
+
+  if (existingEmployer) {
+    return next(new appError("Email already exists for another employer", 400));
+  }
+
+  const employer = await employer_model.findById(employerId);
+  if (!employer) {
+    return next(new appError("Employer not found", 400));
+  }
+
+  employer.email = newEmail;
+  const subscription = await subscription_model.findOne({
+    employerId: employerId,
+  });
+  if (credits > subscription.currentPackage.numberOfCredits) {
+    subscription.currentPackage.numberOfCreditsAdminCustomAdded +=
+      credits - subscription.currentPackage.numberOfCredits;
+    subscription.currentPackage.numberOfCredits = credits;
+  } else if (credits < subscription.currentPackage.numberOfCredits) {
+    subscription.currentPackage.numberOfCreditsAdminCustomRemove +=
+      subscription.currentPackage.numberOfCredits - credits;
+    subscription.currentPackage.numberOfCredits = credits;
+  }
+
+  await employer.save();
+  await subscription.save();
+
+  return successMessage(
+    200,
+    res,
+    "Employer email and credits updated successfully",
+    employer
+  );
+});
+
 module.exports = {
   signUpEmployer,
   logInEmployer,
@@ -376,4 +521,8 @@ module.exports = {
   updateProfile,
   changePasswordManually,
   getEmployerDashboard,
+  getEmployerAdminDashboard,
+  toggleEmployerStatus,
+  deleteEmployer,
+  updateEmployerEmailAndCredits,
 };

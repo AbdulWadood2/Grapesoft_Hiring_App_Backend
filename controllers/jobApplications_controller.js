@@ -277,6 +277,12 @@ const acceptJobApplication = catchAsync(async (req, res, next) => {
     .lean();
   candidate.refreshToken = undefined;
   candidate.password = undefined;
+  if (candidate.isBlocked) {
+    return next(new appError("candidate is blocked", 400));
+  }
+  if (candidate.isDeleted) {
+    return next(new appError("candidate is deleted", 400));
+  }
   if (candidate.avatar)
     [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
   if (candidate.aboutVideo)
@@ -343,6 +349,12 @@ const passJobApplication = catchAsync(async (req, res, next) => {
     .lean();
   candidate.refreshToken = undefined;
   candidate.password = undefined;
+  if (candidate.isBlocked) {
+    return next(new appError("candidate is blocked", 400));
+  }
+  if (candidate.isDeleted) {
+    return next(new appError("candidate is deleted", 400));
+  }
   if (candidate.avatar)
     [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
   if (candidate.aboutVideo)
@@ -406,6 +418,12 @@ const contractApproved = catchAsync(async (req, res, next) => {
     .lean();
   candidate.refreshToken = undefined;
   candidate.password = undefined;
+  if (candidate.isBlocked) {
+    return next(new appError("candidate is blocked", 400));
+  }
+  if (candidate.isDeleted) {
+    return next(new appError("candidate is deleted", 400));
+  }
   if (candidate.avatar)
     [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
   if (candidate.aboutVideo)
@@ -781,6 +799,54 @@ const getSignContract = catchAsync(async (req, res, next) => {
   });
 });
 
+// method get
+// endpoint: /api/v1/jobApplication/recentActivity
+// description: get recent activity
+const getRecentActivities = catchAsync(async (req, res, next) => {
+  // Get the page and limit from the query parameters, with default values
+  const page = parseInt(req.query.page) || 1; // Default to page 1
+  const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+
+  // Calculate the number of documents to skip
+  const skip = (page - 1) * limit;
+
+  // Find job applications with pagination and sort by updatedAt in descending order
+  let jobApplications = await jobApply_model
+    .find()
+    .sort({ updatedAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  // Populate candidate details
+  jobApplications = await Promise.all(
+    jobApplications.map(async (item) => {
+      const candidate = await candidate_model
+        .findOne({ _id: item.candidateId })
+        .lean();
+      item.candidate = candidate;
+      return item;
+    })
+  );
+
+  // Get the total count of documents for pagination info
+  const totalJobApplications = await jobApply_model.countDocuments();
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalJobApplications / limit);
+
+  // Return the paginated response
+  return successMessage(200, res, "Recent activity fetched", {
+    jobApplications,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalItems: totalJobApplications,
+      itemsPerPage: limit,
+    },
+  });
+});
+
 module.exports = {
   getJobApplications,
   getSingleJobApplication,
@@ -794,4 +860,5 @@ module.exports = {
   signContract,
   getDataForSignContract,
   getSignContract,
+  getRecentActivities,
 };

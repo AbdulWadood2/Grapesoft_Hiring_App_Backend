@@ -9,9 +9,16 @@ const {
   updateProfile,
   changePasswordManually,
   getEmployerDashboard,
+  getEmployerAdminDashboard,
+  toggleEmployerStatus,
+  deleteEmployer,
+  updateEmployerEmailAndCredits,
 } = require("../controllers/employer_controller");
 const multer = require("multer");
+// model
 const employer = require("../models/employer_model");
+const admin_model = require("../models/admin_model");
+
 const { verifyToken } = require("../authorization/verifyToken");
 const route = express.Router();
 const upload = multer({ dest: "api/v1/employer/" });
@@ -304,5 +311,123 @@ route.post(
  *         description: Employer dashboard data fetched successfully.
  */
 route.get("/dashboard", verifyToken([employer]), getEmployerDashboard);
+
+/**
+ * @swagger
+ * /api/v1/employer/admin:
+ *   get:
+ *     summary: Get employers with current package details
+ *     description: Fetch employers with pagination, filters, and current subscription package details.
+ *     tags:
+ *       - Employer/admin
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of records per page
+ *       - in: query
+ *         name: filter
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *           enum: [0, 1, 2]
+ *         description: 0 - All, 1 - Enabled, 2 - Disabled
+ *     responses:
+ *       202:
+ *         description: Employers fetched successfully
+ */
+route.get("/admin", verifyToken([admin_model]), getEmployerAdminDashboard);
+
+/**
+ * @swagger
+ * /api/v1/employer/toggle-status:
+ *   put:
+ *     summary: Enable or disable an employer
+ *     description: Toggle the isBlocked status of an employer.
+ *     tags:
+ *       - Employer/admin
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: employerId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the employer to enable or disable.
+ *     responses:
+ *       200:
+ *         description: Employer status toggled successfully
+ */
+route.put("/toggle-status", verifyToken([admin_model]), toggleEmployerStatus);
+
+/**
+ * @swagger
+ * /api/v1/employer/delete:
+ *   delete:
+ *     summary: Delete an employer
+ *     description: Soft delete an employer by setting isDeleted to true.
+ *     tags:
+ *       - Employer/admin
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: employerId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the employer to delete.
+ *     responses:
+ *       200:
+ *         description: Employer deleted successfully
+ */
+route.delete("/delete", verifyToken([admin_model]), deleteEmployer);
+
+/**
+ * @swagger
+ * /api/v1/employer/update:
+ *   put:
+ *     summary: Update employer email and credits
+ *     description: Update an employer's email and credits.
+ *     tags:
+ *       - Employer/admin
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - employerId
+ *               - newEmail
+ *             properties:
+ *               employerId:
+ *                 type: string
+ *                 description: The ID of the employer to update.
+ *               newEmail:
+ *                 type: string
+ *                 format: email
+ *                 description: The new email for the employer.
+ *               credits:
+ *                 type: number
+ *                 description: The number of credits to update.
+ *     responses:
+ *       200:
+ *         description: Employer email and credits updated successfully
+ */
+route.put("/update", verifyToken([admin_model]), updateEmployerEmailAndCredits);
 
 module.exports = route;

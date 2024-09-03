@@ -13,6 +13,8 @@ const {
   candidateDashboard,
   candidateAdminDashboard,
   toggleCandidateBlockStatus,
+  softDeleteCandidateByQuery,
+  updateCandidateEmailById,
 } = require("../controllers/candidate_controller");
 // model
 const candidate = require("../models/candidate_model");
@@ -419,7 +421,7 @@ route.get("/dashboard", verifyToken([candidate]), candidateDashboard);
  *     summary: Get candidates for admin dashboard with pagination and filters.
  *     description: Fetch candidates based on the provided filters (all, enabled, disabled) and paginate results.
  *     tags:
- *       - Candidate/account
+ *       - Candidate/Admin
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -454,7 +456,7 @@ route.get("/admin", verifyToken([admin_model]), candidateAdminDashboard);
  *     summary: Toggle the blocked status of a candidate
  *     description: Toggles the blocked status (enabled/disabled) of a candidate by their ID using query parameters.
  *     tags:
- *       - Candidate/account
+ *       - Candidate/Admin
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -467,15 +469,71 @@ route.get("/admin", verifyToken([admin_model]), candidateAdminDashboard);
  *     responses:
  *       200:
  *         description: Candidate status toggled successfully
- *       400:
- *         description: Candidate ID is required
- *       404:
- *         description: Candidate not found
  */
 route.put(
   "/toggleBlock",
   verifyToken([admin_model]),
   toggleCandidateBlockStatus
 );
+
+/**
+ * @swagger
+ * /api/v1/candidate:
+ *   delete:
+ *     summary: Soft delete a candidate
+ *     description: Allows an admin to soft delete a candidate using a query parameter.
+ *     tags:
+ *       - Candidate/Admin
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The candidate's ID to soft delete
+ *     responses:
+ *       200:
+ *         description: Candidate soft deleted successfully
+ */
+route.delete("/", verifyToken([admin_model]), softDeleteCandidateByQuery); // Secure route with token verification
+
+/**
+ * @swagger
+ * /api/v1/candidate/update-email:
+ *   put:
+ *     summary: Update a candidate's email by ID
+ *     description: Allows an admin to update the email of a candidate by candidate ID. Ensures the new email does not exist for another candidate.
+ *     tags:
+ *       - Candidate/Admin
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - candidateId
+ *               - newEmail
+ *             properties:
+ *               candidateId:
+ *                 type: string
+ *                 description: The ID of the candidate to update.
+ *               newEmail:
+ *                 type: string
+ *                 format: email
+ *                 description: The new email to assign to the candidate.
+ *     responses:
+ *       200:
+ *         description: Candidate email updated successfully.
+ */
+route.put(
+  "/update-email",
+  verifyToken([admin_model]),
+  updateCandidateEmailById
+); // Secure route with token verification
 
 module.exports = route;

@@ -1,9 +1,10 @@
 const express = require("express");
-const { addSubscription } = require("../controllers/subscription_controller");
+const { addSubscription, getEmployerSubscription } = require("../controllers/subscription_controller");
 const route = express.Router();
 
 // model
 const employer_model = require("../models/employer_model");
+const admin_model = require("../models/admin_model")
 
 const { verifyToken } = require("../authorization/verifyToken");
 
@@ -33,5 +34,29 @@ const { verifyToken } = require("../authorization/verifyToken");
  *         description: Subscription updated successfully.
  */
 route.post("/", verifyToken([employer_model]), addSubscription);
+
+/**
+ * @swagger
+ * /api/v1/subscription/admin:
+ *   get:
+ *     summary: Get a specific employer's subscription details by admin
+ *     description: Retrieve subscription details for a specific employer using employer ID.
+ *     tags:
+ *       - Subscription
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: employerId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the employer whose subscription details are to be fetched.
+ *     responses:
+ *       200:
+ *         description: Subscription fetched successfully
+ */
+route.get("/admin", verifyToken([admin_model]), getEmployerSubscription);
+
 
 module.exports = route;

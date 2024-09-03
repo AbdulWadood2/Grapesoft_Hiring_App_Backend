@@ -74,6 +74,35 @@ const addSubscription = catchAsync(async (req, res, next) => {
   );
 });
 
+// method get
+// endpoint /api/v1/subscription/admin
+// description get specific employer subscription by admin
+const getEmployerSubscription = catchAsync(async (req, res, next) => {
+  const employerId = req.query.employerId;
+
+  // Validate employerId query parameter
+  if (!employerId) {
+    return next(new appError("Employer ID is required", 400));
+  }
+
+  // Find subscription by employer ID
+  const subscription = await subscription_model.findOne({ employerId });
+
+  // If no subscription found, return error
+  if (!subscription) {
+    return next(new appError("Subscription not found for this employer", 400));
+  }
+
+  // Return success message with subscription details
+  return successMessage(
+    200,
+    res,
+    "Subscription fetched successfully",
+    subscription
+  );
+});
+
 module.exports = {
   addSubscription,
+  getEmployerSubscription,
 };

@@ -12,10 +12,12 @@ const {
   signContract,
   getDataForSignContract,
   getSignContract,
+  getRecentActivities,
 } = require("../controllers/jobApplications_controller");
 // models
 const employer_model = require("../models/employer_model");
 const candidate_model = require("../models/candidate_model");
+const admin_model = require("../models/admin_model");
 
 const { verifyToken } = require("../authorization/verifyToken");
 
@@ -391,5 +393,34 @@ route.get(
   verifyToken([employer_model, candidate_model]),
   getSignContract
 );
+
+/**
+ * @swagger
+ * /api/v1/jobApplication/recentActivity:
+ *   get:
+ *     summary: Get recent job application activities
+ *     description: Fetch recent job application activities with pagination.
+ *     tags:
+ *       - Job Application/Admin
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: Page number for pagination (default is 1).
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         required: false
+ *         description: Number of items per page for pagination (default is 10).
+ *     responses:
+ *       200:
+ *         description: Recent activity fetched successfully.
+ */
+route.get("/recentActivity", verifyToken([admin_model]), getRecentActivities);
 
 module.exports = route;
