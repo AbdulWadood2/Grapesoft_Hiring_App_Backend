@@ -65,17 +65,17 @@ const getAdminStatistics = catchAsync(async (req, res, next) => {
     await Promise.all([
       subscription_model.find(),
       employer_model.countDocuments({
-        isDeleted: false,
+        isDeleted: { $ne: true },
       }),
       candidate_model.countDocuments({
-        isDeleted: false,
+        isDeleted: { $ne: true },
       }),
       job_model.countDocuments({
         status: true,
-        isDeleted: false,
+        isDeleted: { $ne: true },
       }),
       job_model.countDocuments({
-        isDeleted: false,
+        isDeleted: { $ne: true },
       }),
     ]);
   // Function to calculate total credits and subscription cost
