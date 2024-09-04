@@ -512,10 +512,10 @@ const candidateAdminDashboard = catchAsync(async (req, res, next) => {
 
   // Build the query filter based on the filter parameter
   let query = {};
-  if (filter === 1) {
+  if (filter == 1) {
     // Enabled candidates (isBlocked = false)
-    query.isBlocked = false;
-  } else if (filter === 2) {
+    query.isBlocked = { $ne: true };
+  } else if (filter == 2) {
     // Disabled candidates (isBlocked = true)
     query.isBlocked = true;
   }
@@ -524,12 +524,12 @@ const candidateAdminDashboard = catchAsync(async (req, res, next) => {
   // Fetch all candidates with pagination and filter
   const totalDocuments = await candidate_model.countDocuments({
     ...query,
-    isDeleted: false,
+    isDeleted: { $ne: true },
   }); // Count total documents matching the filter
   let candidates = await candidate_model
     .find({
       ...query,
-      isDeleted: false,
+      isDeleted: { $ne: true },
     })
     .sort({ createdAt: -1 })
     .select("-password -refreshToken")

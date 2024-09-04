@@ -376,27 +376,37 @@ const getEmployerAdminDashboard = catchAsync(async (req, res, next) => {
 
   const skip = (page - 1) * limit;
 
-  let query = { isDeleted: false }; // Default query to exclude deleted employers
+  let query = { isDeleted: { $ne: true } }; // Default query to exclude deleted employers
   if (filter === 1) {
-    query.isBlocked = false; // Enabled employers
+    query.isBlocked = { $ne: true }; // Enabled employers
   } else if (filter === 2) {
     query.isBlocked = true; // Disabled employers
   }
 
   const totalDocuments = await employer_model.countDocuments({
     ...query,
-    isDeleted: false,
+    isDeleted: { $ne: true },
   });
   let employers = await employer_model
     .find({
       ...query,
-      isDeleted: false,
+      isDeleted: { $ne: true },
     })
     .sort({ createdAt: -1 })
     .select("-password -refreshToken -encryptOTP")
     .skip(skip)
     .limit(limit)
-    .populate("currentPackage");
+    .lean();
+  employers = await Promise.all(
+    employers.map(async (employer) => {
+      const currentSubscription = await subscription_model.findOne({
+        employerId: employer._id,
+      });
+      employer.currentSubscription = currentSubscription;
+      [employer.avatar] = await generateSignedUrl([employer.avatar]);
+      return employer;
+    })
+  );
 
   const totalPages = Math.ceil(totalDocuments / limit);
 
