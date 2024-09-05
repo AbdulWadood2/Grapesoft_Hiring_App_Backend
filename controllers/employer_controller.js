@@ -497,17 +497,43 @@ const updateEmployerEmailAndCredits = catchAsync(async (req, res, next) => {
   }
 
   employer.email = newEmail;
-  const subscription = await subscription_model.findOne({
+  let subscription = await subscription_model.findOne({
     employerId: employerId,
   });
-  if (credits > subscription.currentPackage.numberOfCredits) {
-    subscription.currentPackage.numberOfCreditsAdminCustomAdded +=
-      credits - subscription.currentPackage.numberOfCredits;
-    subscription.currentPackage.numberOfCredits = credits;
-  } else if (credits < subscription.currentPackage.numberOfCredits) {
-    subscription.currentPackage.numberOfCreditsAdminCustomRemove +=
-      subscription.currentPackage.numberOfCredits - credits;
-    subscription.currentPackage.numberOfCredits = credits;
+  if (subscription) {
+    if (credits > subscription.currentPackage.packageStatus.numberOfCredits) {
+      subscription.currentPackage.packageStatus.numberOfCreditsAdminCustomAdded +=
+        credits - subscription.currentPackage.packageStatus.numberOfCredits;
+      subscription.currentPackage.numberOfCredits = credits;
+    } else if (
+      credits < subscription.currentPackage.packageStatus.numberOfCredits
+    ) {
+      subscription.currentPackage.packageStatus.numberOfCreditsAdminCustomRemove +=
+        subscription.currentPackage.packageStatus.numberOfCredits - credits;
+      subscription.currentPackage.packageStatus.numberOfCredits = credits;
+    }
+  } else {
+    subscription = await subscription_model.create({
+      employerId: employerId,
+      currentPackage: {
+        transactionId: null,
+        title: "Admin Added",
+        features: "All Access",
+        pricePerCredit: 0,
+        numberOfCredits: credits,
+        type: 1,
+        active: true,
+        packageStatus: {
+          transactionId: null,
+          title: "Admin Added",
+          features: "All Access",
+          pricePerCredit: 0,
+          numberOfCredits: credits,
+          type: 1,
+          active: true,
+        },
+      },
+    });
   }
 
   await employer.save();
@@ -517,7 +543,7 @@ const updateEmployerEmailAndCredits = catchAsync(async (req, res, next) => {
     200,
     res,
     "Employer email and credits updated successfully",
-    employer
+    { employer, currentPackage: subscription.currentPackage }
   );
 });
 
