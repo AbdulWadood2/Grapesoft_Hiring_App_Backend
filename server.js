@@ -18,6 +18,7 @@ const jobApplication_routes = require("./routes/jobApplications_route.js");
 const testPermissions_routes = require("./routes/testPermisions_routes.js");
 const test_routes = require("./routes/test_routes.js");
 const notification_routes = require("./routes/notification_routes.js");
+const stripeKey_routes = require("./routes/stripeKey_routes.js");
 
 const app = express();
 app.use(
@@ -53,6 +54,7 @@ app.use("/api/v1/jobApplication", jobApplication_routes);
 app.use("/api/v1/testPermissions", testPermissions_routes);
 app.use("/api/v1/test", test_routes);
 app.use("/api/v1/notification", notification_routes);
+app.use("/api/v1/stripe-key", stripeKey_routes);
 
 // Connect to MongoDB
 connectionDb().catch((error) => {
