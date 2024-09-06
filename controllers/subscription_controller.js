@@ -87,7 +87,6 @@ const getEmployerSubscription = catchAsync(async (req, res, next) => {
 
   // Find subscription by employer ID
   const subscription = await subscription_model.findOne({ employerId });
-
   // If no subscription found, return error
   if (!subscription) {
     return next(new appError("Subscription not found for this employer", 400));

@@ -11,6 +11,10 @@ const admin = new mongoose.Schema(
       type: String,
       required: true,
     },
+    encryptOTP: {
+      type: String,
+      default: null,
+    },
     refreshToken: [
       {
         type: String,
