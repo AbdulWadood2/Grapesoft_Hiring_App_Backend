@@ -1,10 +1,19 @@
 const express = require("express");
-const { addSubscription, getEmployerSubscription } = require("../controllers/subscription_controller");
+const {
+  addSubscription,
+  getEmployerSubscription,
+  stripeSuccessWebhook,
+  cancelSubscriptionWebhook,
+  verifyPayment,
+} = require("../controllers/subscription_controller");
 const route = express.Router();
+
+// body parser
+const bodyParser = require("body-parser");
 
 // model
 const employer_model = require("../models/employer_model");
-const admin_model = require("../models/admin_model")
+const admin_model = require("../models/admin_model");
 
 const { verifyToken } = require("../authorization/verifyToken");
 
@@ -35,6 +44,17 @@ const { verifyToken } = require("../authorization/verifyToken");
  */
 route.post("/", verifyToken([employer_model]), addSubscription);
 
+route.post(
+  "/success",
+  bodyParser.raw({ type: "application/json" }), // Use raw body parser to prevent JSON parsing
+  stripeSuccessWebhook
+);
+
+route.post("/cancel", cancelSubscriptionWebhook);
+
+// Verify Payment Route
+route.post("/verify-payment", verifyPayment);
+
 /**
  * @swagger
  * /api/v1/subscription/admin:
@@ -57,6 +77,5 @@ route.post("/", verifyToken([employer_model]), addSubscription);
  *         description: Subscription fetched successfully
  */
 route.get("/admin", verifyToken([admin_model]), getEmployerSubscription);
-
 
 module.exports = route;

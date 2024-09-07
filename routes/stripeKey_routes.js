@@ -6,6 +6,7 @@ const {
 const { verifyToken } = require("../authorization/verifyToken"); // Assuming this is the correct middleware
 const router = express.Router();
 const admin_model = require("../models/admin_model");
+const employer_model = require("../models/employer_model");
 
 /**
  * @swagger
@@ -54,7 +55,7 @@ router.post(
  */
 router.get(
   "/",
-  verifyToken([admin_model]), // Only admins can access this route
+  verifyToken([admin_model, employer_model]), // Only admins can access this route
   getStripeKey
 );
 

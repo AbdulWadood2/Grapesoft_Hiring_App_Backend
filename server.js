@@ -2,6 +2,8 @@ const express = require("express");
 require("dotenv").config();
 const connectionDb = require("./config/Db.js");
 const cors = require("cors");
+// body parser
+const bodyParser = require("body-parser");
 // routes
 const employer_routes = require("./routes/employer_routes.js");
 const candidate_routes = require("./routes/candidate_routes.js");
@@ -35,8 +37,17 @@ app.use(
 );
 
 app.options("*", cors());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// Stripe webhook route with raw body parser
+app.use(
+  "/api/v1/subscription/success",
+  bodyParser.raw({ type: "application/json" })
+);
+// app.use(express.urlencoded({ extended: true }));
+// app.use(express.json());
+
+// Apply bodyParser for all other routes after the webhook
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 /* routes */
 app.use("/api/v1/employer", employer_routes);
