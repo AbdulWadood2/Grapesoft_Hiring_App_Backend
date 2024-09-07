@@ -5,6 +5,7 @@ const {
   stripeSuccessWebhook,
   cancelSubscriptionWebhook,
   verifyPayment,
+  getmySubscription,
 } = require("../controllers/subscription_controller");
 const route = express.Router();
 
@@ -77,5 +78,20 @@ route.post("/verify-payment", verifyPayment);
  *         description: Subscription fetched successfully
  */
 route.get("/admin", verifyToken([admin_model]), getEmployerSubscription);
+/**
+ * @swagger
+ * /api/v1/subscription/employer:
+ *   get:
+ *     summary: employer
+ *     description: employer
+ *     tags:
+ *       - Subscription
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Subscription fetched successfully
+ */
+route.get("/employer", verifyToken([employer_model]), getmySubscription);
 
 module.exports = route;

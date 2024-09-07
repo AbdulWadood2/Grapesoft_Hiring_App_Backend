@@ -102,7 +102,7 @@ const stripeSuccessWebhook = catchAsync(async (req, res, next) => {
     });
     // Step 1: Retrieve the Checkout Session
     const sessionCheckOutId = await stripe.checkout.sessions.retrieve(
-      "cs_test_a1VEW789rbvA2kMgjYjr9sOxHoihJssaVy7NI3UqiXrSOjVgbIZle5ZfLZ"
+      session.id
     );
     // Step 2: Get the Payment Intent ID from the session
     const paymentIntentId = sessionCheckOutId.payment_intent;
@@ -121,7 +121,7 @@ const stripeSuccessWebhook = catchAsync(async (req, res, next) => {
           pricePerCredit: package.pricePerCredit,
           numberOfCredits: package.numberOfCredits,
           type: package.type,
-          active: package.active,
+          active: true,
           packageStatus: {
             transactionId: session.id,
             title: package.title,
@@ -129,11 +129,13 @@ const stripeSuccessWebhook = catchAsync(async (req, res, next) => {
             pricePerCredit: package.pricePerCredit,
             numberOfCredits: package.numberOfCredits,
             type: package.type,
-            active: package.active,
+            active: true,
           },
         },
       });
     } else {
+      console.log("hi");
+      subscription.currentPackage.active = false;
       // Update existing subscription
       subscription.subscriptionHistory.push(subscription.currentPackage);
       subscription.currentPackage = {
@@ -143,7 +145,7 @@ const stripeSuccessWebhook = catchAsync(async (req, res, next) => {
         pricePerCredit: package.pricePerCredit,
         numberOfCredits: package.numberOfCredits,
         type: package.type,
-        active: package.active,
+        active: true,
         packageStatus: {
           transactionId: session.id,
           title: package.title,
@@ -151,7 +153,7 @@ const stripeSuccessWebhook = catchAsync(async (req, res, next) => {
           pricePerCredit: package.pricePerCredit,
           numberOfCredits: package.numberOfCredits,
           type: package.type,
-          active: package.active,
+          active: true,
         },
       };
       // Save the updated subscription
@@ -286,6 +288,32 @@ const getEmployerSubscription = catchAsync(async (req, res, next) => {
     subscription
   );
 });
+// method get
+// endpoint /api/v1/subscription/admin
+// description by user
+const getmySubscription = catchAsync(async (req, res, next) => {
+  const employerId = req.user.id;
+
+  // Validate employerId query parameter
+  if (!employerId) {
+    return next(new appError("Employer ID is required", 400));
+  }
+
+  // Find subscription by employer ID
+  const subscription = await subscription_model.findOne({ employerId });
+  // If no subscription found, return error
+  if (!subscription) {
+    return next(new appError("Subscription not found for this employer", 400));
+  }
+
+  // Return success message with subscription details
+  return successMessage(
+    200,
+    res,
+    "Subscription fetched successfully",
+    subscription
+  );
+});
 
 module.exports = {
   addSubscription,
@@ -293,4 +321,5 @@ module.exports = {
   cancelSubscriptionWebhook,
   verifyPayment,
   getEmployerSubscription,
+  getmySubscription,
 };
