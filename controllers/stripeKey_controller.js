@@ -7,7 +7,7 @@ const { successMessage } = require("../successHandlers/successController");
 // endPoint /api/v1/stripe-key
 // Create or update Stripe keys
 exports.createOrUpdateStripeKey = catchAsync(async (req, res, next) => {
-  const { publishableKey, secretKey } = req.body;
+  const { publishableKey, secretKey, webHookSecret } = req.body;
   if (!publishableKey || !secretKey) {
     return next(
       new AppError("Please provide both publishable and secret keys", 400)
@@ -20,9 +20,14 @@ exports.createOrUpdateStripeKey = catchAsync(async (req, res, next) => {
   if (stripeKey) {
     stripeKey.publishableKey = publishableKey;
     stripeKey.secretKey = secretKey;
+    stripeKey.webHookSecret = webHookSecret;
     await stripeKey.save();
   } else {
-    stripeKey = await StripeKey.create({ publishableKey, secretKey });
+    stripeKey = await StripeKey.create({
+      publishableKey,
+      secretKey,
+      webHookSecret,
+    });
   }
 
   return successMessage(200, res, "create or update strip", stripeKey);

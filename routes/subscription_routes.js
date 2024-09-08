@@ -51,8 +51,6 @@ route.post(
   stripeSuccessWebhook
 );
 
-route.post("/cancel", cancelSubscriptionWebhook);
-
 // Verify Payment Route
 route.post("/verify-payment", verifyPayment);
 

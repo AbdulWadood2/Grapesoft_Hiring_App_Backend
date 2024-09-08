@@ -75,7 +75,7 @@ const stripeSuccessWebhook = catchAsync(async (req, res, next) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       req.headers["stripe-signature"],
-      process.env.STRIPE_WEBHOOK_SECRET // Your Stripe Webhook Secret
+      stripeKeys.webHookSecret // Your Stripe Webhook Secret
     );
   } catch (error) {
     // console.log(error.message);
@@ -170,13 +170,6 @@ const stripeSuccessWebhook = catchAsync(async (req, res, next) => {
   return successMessage(200, res, null, {
     received: true,
   });
-});
-
-// method POST
-// endpoint /api/v1/subscription/cancel
-// Cancel subscription
-const cancelSubscriptionWebhook = catchAsync(async (req, res, next) => {
-  return successMessage(200, res, "Subscription cancelled successfully.", null);
 });
 
 // method POST
@@ -318,7 +311,6 @@ const getmySubscription = catchAsync(async (req, res, next) => {
 module.exports = {
   addSubscription,
   stripeSuccessWebhook,
-  cancelSubscriptionWebhook,
   verifyPayment,
   getEmployerSubscription,
   getmySubscription,

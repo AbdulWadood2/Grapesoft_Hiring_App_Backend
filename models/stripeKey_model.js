@@ -10,6 +10,10 @@ const stripekeySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    webHookSecret: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true,

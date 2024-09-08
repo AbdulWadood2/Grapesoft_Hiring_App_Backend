@@ -30,6 +30,9 @@ const employer_model = require("../models/employer_model");
  *               secretKey:
  *                 type: string
  *                 example: sk_test_12345
+ *               webHookSecret:
+ *                 type: string
+ *                 example: webHookSecret
  *     responses:
  *       200:
  *         description: Stripe keys created/updated successfully
