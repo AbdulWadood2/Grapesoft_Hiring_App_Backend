@@ -75,6 +75,10 @@ const candidateSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    encryptOTP: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

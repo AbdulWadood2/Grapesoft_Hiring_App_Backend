@@ -18,15 +18,12 @@ const jobValidationSchema = Joi.object({
   specification: Joi.object({
     title: Joi.string().required(),
     video: Joi.string()
-      .required()
       .custom((value, helpers) =>
         validateExtension(value, helpers, validVideoExtensions)
       )
-      .messages({
-        "any.invalid": `Allowed file types: ${validVideoExtensions.join(
-          ", "
-        )}.`,
-      }),
+      .optional()
+      .allow(null), // This makes the field optional
+
     docs: Joi.string()
       .required()
       .custom((value, helpers) =>
@@ -58,16 +55,18 @@ const jobValidationSchema = Joi.object({
       }),
   }).required(),
   contract: Joi.object({
-    title: Joi.string().required(),
+    title: Joi.string().optional().allow(null), // Optional title
     docs: Joi.string()
-      .required()
       .custom((value, helpers) =>
         validateExtension(value, helpers, validDocExtensions)
       )
+      .optional()
+      .allow(null) // Optional docs field
       .messages({
         "any.invalid": `Allowed file types: ${validDocExtensions.join(", ")}.`,
       }),
-  }).required(),
+  }).optional(), // The entire contract object is optional
+
   status: Joi.boolean().default(true),
   privateOrPublic: Joi.boolean().default(true),
   testBuilderId: objectId.required(),

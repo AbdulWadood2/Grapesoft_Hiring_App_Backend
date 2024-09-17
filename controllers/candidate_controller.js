@@ -29,6 +29,7 @@ const {
   checkImageExists,
   checkDuplicateAwsImgsInRecords,
 } = require("../functions/aws_functions.js");
+const VerfiAccountEmail = require("../emailSender/verifyAccount/VerifyAccoutEmail.js");
 
 // method post
 // endPoint /api/v1/candidate/signup
@@ -42,13 +43,18 @@ const signUpCandidate = catchAsync(async (req, res, next) => {
   const candidateExist = await candidate_model.findOne({
     email: value.email,
   });
-  if (candidateExist && candidateExist.password) {
+  if (candidateExist && candidateExist.isverified) {
     return next(new appError("you are already signup plz login", 400));
   }
   if (candidateExist && !candidateExist.password) {
     // Encrypt the password
     const encryptedPassword = CryptoJS.AES.encrypt(
       value.password,
+      process.env.CRYPTO_SEC
+    ).toString();
+    const otp = generateRandomNumber(5);
+    const encryptedOtp = CryptoJS.AES.encrypt(
+      JSON.stringify({ otp, email: value.email }),
       process.env.CRYPTO_SEC
     ).toString();
     // get user
@@ -59,7 +65,8 @@ const signUpCandidate = catchAsync(async (req, res, next) => {
       {
         ...value,
         password: encryptedPassword,
-        isverified: true,
+        encryptOTP: encryptedOtp,
+        isverified: false,
       },
       {
         new: true,
@@ -69,43 +76,93 @@ const signUpCandidate = catchAsync(async (req, res, next) => {
     if (!user) {
       return next(new appError("error creating candidate", 400));
     }
-    const { refreshToken, accessToken } = generateAccessTokenRefreshToken(
-      user._id.toString()
-    );
-    user.password = undefined;
-    user.refreshToken = undefined;
     // send response
-    return successMessage(202, res, "signUp success", {
-      accessToken,
-      // refreshToken,
-      ...JSON.parse(JSON.stringify(user)),
-    });
+    successMessage(202, res, "otp send to your email");
+    await new VerfiAccountEmail(
+      { email: value.email },
+      otp
+    ).sendVerificationCode();
+    return;
   }
   // Encrypt the password
   const encryptedPassword = CryptoJS.AES.encrypt(
     value.password,
     process.env.CRYPTO_SEC
   ).toString();
-  // get user
-  const user = await candidate_model.create({
-    ...value,
-    password: encryptedPassword,
-    isverified: true,
-  });
+  const otp = generateRandomNumber(5);
+  const encryptedOtp = CryptoJS.AES.encrypt(
+    JSON.stringify({ otp, email: value.email }),
+    process.env.CRYPTO_SEC
+  ).toString();
+  let user;
+  if (!candidateExist) {
+    // get user
+    user = await candidate_model.create({
+      ...value,
+      password: encryptedPassword,
+      encryptOTP: encryptedOtp,
+      isverified: false,
+    });
+  } else {
+    // get user
+    user = await candidate_model.findOneAndUpdate(
+      {
+        _id: candidateExist._id.toString(),
+      },
+      {
+        ...value,
+        password: encryptedPassword,
+        encryptOTP: encryptedOtp,
+        isverified: false,
+      },
+      {
+        new: true,
+      }
+    );
+  }
   // check user
   if (!user) {
     return next(new appError("error creating candidate", 400));
   }
-  const { refreshToken, accessToken } = generateAccessTokenRefreshToken(
-    user._id.toString()
-  );
-  user.password = undefined;
-  user.refreshToken = undefined;
   // send response
-  return successMessage(202, res, "signUp success", {
+  successMessage(202, res, "otp sent to your email");
+  await new VerfiAccountEmail(
+    { email: value.email },
+    otp
+  ).sendVerificationCode();
+  return;
+});
+
+// method post
+// endPoint /api/v1/employer/verifySignup
+// description verify Signup
+const verifySignup = catchAsync(async (req, res, next) => {
+  const { otp, email } = req.body;
+  const candidateExist = await candidate_model.findOne({ email });
+  if (!candidateExist) {
+    return next(new appError("account not found!", 400));
+  }
+  const decryptedOtp = JSON.parse(
+    CryptoJS.AES.decrypt(
+      candidateExist.encryptOTP,
+      process.env.CRYPTO_SEC
+    ).toString(CryptoJS.enc.Utf8, candidateExist.encryptOTP)
+  );
+  if (Number(otp) !== Number(decryptedOtp.otp)) {
+    return next(new appError("invalid OTP!", 400));
+  }
+  candidateExist.isverified = true;
+  await candidateExist.save();
+  const { refreshToken, accessToken } = generateAccessTokenRefreshToken(
+    candidateExist._id.toString()
+  );
+  candidateExist.password = undefined;
+  candidateExist.refreshToken = undefined;
+  // send response
+  successMessage(202, res, "signUp success", {
     accessToken,
     // refreshToken,
-    ...JSON.parse(JSON.stringify(user)),
+    ...JSON.parse(JSON.stringify(candidateExist)),
   });
 });
 
@@ -666,6 +723,7 @@ const updateCandidateEmailById = catchAsync(async (req, res, next) => {
 
 module.exports = {
   signUpCandidate,
+  verifySignup,
   logInCandidate,
   getCandidateProfile,
   sendForgetOTP,

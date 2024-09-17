@@ -35,6 +35,7 @@ const {
   checkDuplicateAwsImgsInRecords,
   checkImageExists,
 } = require("../functions/aws_functions.js");
+const VerfiAccountEmail = require("../emailSender/verifyAccount/VerifyAccoutEmail.js");
 
 // method post
 // endPoint /api/v1/employer/signup
@@ -48,7 +49,7 @@ const signUpEmployer = catchAsync(async (req, res, next) => {
   const employerExist = await employer_model.findOne({
     email: value.email,
   });
-  if (employerExist) {
+  if (employerExist && employerExist.isverified) {
     return next(new appError("you are already signup plz login", 400));
   }
   // Encrypt the password
@@ -56,45 +57,103 @@ const signUpEmployer = catchAsync(async (req, res, next) => {
     value.password,
     process.env.CRYPTO_SEC
   ).toString();
-  // get user
-  const user = await employer_model.create({
-    ...value,
-    password: encryptedPassword,
-  });
+  let user;
+  if (!employerExist) {
+    user = await employer_model.create({
+      ...value,
+      password: encryptedPassword,
+    });
+  } else {
+    user = await employer_model.findOneAndUpdate(
+      {
+        _id: employerExist._id.toString(),
+      },
+      {
+        ...value,
+        password: encryptedPassword,
+      },
+      {
+        new: true,
+      }
+    );
+  }
   // check user
   if (!user) {
     return next(new appError("error creating employer", 400));
   }
-  const { refreshToken, accessToken } = generateAccessTokenRefreshToken(
-    user._id.toString()
+  const userCreated = await employer_model.findOne({
+    _id: user._id,
+  });
+  const otp = generateRandomNumber(5);
+  const encryptedOtp = CryptoJS.AES.encrypt(
+    JSON.stringify({ otp, email: value.email }),
+    process.env.CRYPTO_SEC
+  ).toString();
+  userCreated.encryptOTP = encryptedOtp;
+  await userCreated.save();
+  // send response
+  successMessage(202, res, "verify otp sent to email");
+  await new VerfiAccountEmail(
+    { email: user.email },
+    otp
+  ).sendVerificationCode();
+});
+
+// method post
+// endPoint /api/v1/employer/verifySignup
+// description verify Signup
+const verifySignup = catchAsync(async (req, res, next) => {
+  const { otp, email } = req.body;
+  const employerExist = await employer_model.findOne({ email });
+  if (!employerExist) {
+    return next(new appError("account not found!", 400));
+  }
+  const decryptedOtp = JSON.parse(
+    CryptoJS.AES.decrypt(
+      employerExist.encryptOTP,
+      process.env.CRYPTO_SEC
+    ).toString(CryptoJS.enc.Utf8, employerExist.encryptOTP)
   );
-  // await employer_model.findOneAndUpdate(
-  //   {
-  //     _id: user._id,
-  //   },
-  //   {
-  //     $push: { refreshToken },
-  //   }
-  // );
-  user.password = undefined;
-  user.refreshToken = undefined;
+  if (Number(otp) !== Number(decryptedOtp.otp)) {
+    return next(new appError("invalid OTP!", 400));
+  }
+  employerExist.isverified = true;
+  await employerExist.save();
+  const { refreshToken, accessToken } = generateAccessTokenRefreshToken(
+    employerExist._id.toString()
+  );
+  employerExist.password = undefined;
+  employerExist.refreshToken = undefined;
   // send response
   successMessage(202, res, "signUp success", {
     accessToken,
     // refreshToken,
-    ...JSON.parse(JSON.stringify(user)),
+    ...JSON.parse(JSON.stringify(employerExist)),
   });
   const freePackage = await package_model.findOne({
     type: 0,
   });
   if (freePackage.active) {
     await subscription_model.create({
-      title: freePackage.title,
-      features: freePackage.features,
-      pricePerCredit: freePackage.pricePerCredit,
-      numberOfCredits: freePackage.numberOfCredits,
-      type: freePackage.type,
-      active: freePackage.active,
+      employerId: employerExist._id,
+      currentPackage: {
+        transactionId: null,
+        title: freePackage.title,
+        features: freePackage.features,
+        pricePerCredit: freePackage.pricePerCredit,
+        numberOfCredits: freePackage.numberOfCredits,
+        type: freePackage.type,
+        active: true,
+        packageStatus: {
+          transactionId: null,
+          title: freePackage.title,
+          features: freePackage.features,
+          pricePerCredit: freePackage.pricePerCredit,
+          numberOfCredits: freePackage.numberOfCredits,
+          type: freePackage.type,
+          active: true,
+        },
+      },
     });
   }
 });
@@ -549,6 +608,7 @@ const updateEmployerEmailAndCredits = catchAsync(async (req, res, next) => {
 
 module.exports = {
   signUpEmployer,
+  verifySignup,
   logInEmployer,
   getEmployerProfile,
   sendForgetOTP,

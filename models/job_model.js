@@ -9,7 +9,7 @@ const jobSchema = new mongoose.Schema(
     },
     specification: {
       title: { type: String, required: true },
-      video: { type: String, required: true },
+      video: { type: String, default: null },
       docs: { type: String, required: true },
     },
     training: {
@@ -18,8 +18,8 @@ const jobSchema = new mongoose.Schema(
       docs: { type: String, required: true },
     },
     contract: {
-      title: { type: String, required: true },
-      docs: { type: String, required: true },
+      title: { type: String, default: null },
+      docs: { type: String, default: null },
     },
     testBuilderId: { type: mongoose.Schema.Types.ObjectId, default: null },
     status: {

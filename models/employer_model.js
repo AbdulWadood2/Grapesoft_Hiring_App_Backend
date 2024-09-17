@@ -36,6 +36,10 @@ const employerSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    isverified: {
+      type: Boolean,
+      default: false,
+    },
     isDeleted: {
       type: Boolean,
       default: false,

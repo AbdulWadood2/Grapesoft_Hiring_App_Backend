@@ -13,6 +13,7 @@ const {
   toggleEmployerStatus,
   deleteEmployer,
   updateEmployerEmailAndCredits,
+  verifySignup,
 } = require("../controllers/employer_controller");
 const multer = require("multer");
 // model
@@ -66,6 +67,37 @@ const upload = multer({ dest: "api/v1/employer/" });
  *         description: Signup success
  */
 route.post("/signup", signUpEmployer);
+
+/**
+ * @swagger
+ * /api/v1/employer/verifySignup:
+ *   post:
+ *     summary: Verify employer signup using OTP.
+ *     description: This endpoint is used to verify the employer's signup process by checking the OTP sent to the provided email. If the OTP matches, the employer's account will be marked as verified. A free package will also be assigned if available.
+ *     tags:
+ *       - Employer/account
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Email address of the employer.
+ *                 example: employer@example.com
+ *               otp:
+ *                 type: string
+ *                 description: OTP sent to the employer's email.
+ *                 example: "123456"
+ *     responses:
+ *       202:
+ *         description: Signup successfully verified.
+ */
+route.post("/verifySignup", verifySignup);
 
 /**
  * @swagger

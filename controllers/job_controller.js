@@ -34,9 +34,22 @@ const {
 const createJob = catchAsync(async (req, res, next) => {
   const { value, error } = jobValidationSchema.validate(req.body);
   // Handle each file separately with null checks
-  value.specification.video = value.specification.video
-    ? (await getFileName([value.specification.video]))[0]
-    : null;
+  if (value.specification.video) {
+    value.specification.video = value.specification.video
+      ? (await getFileName([value.specification.video]))[0]
+      : null;
+    const [isSpecificationVideoValid, [isSpecificationVideoExist]] =
+      await Promise.all([
+        checkDuplicateAwsImgsInRecords([value.specification.video]),
+        checkImageExists([value.specification.video]),
+      ]);
+    if (!isSpecificationVideoValid.success) {
+      return next(new appError("Video specification is already used", 400));
+    }
+    if (!isSpecificationVideoExist) {
+      return next(new appError("Video specification does not exist", 400));
+    }
+  }
 
   value.specification.docs = value.specification.docs
     ? (await getFileName([value.specification.docs]))[0]
@@ -49,43 +62,40 @@ const createJob = catchAsync(async (req, res, next) => {
   value.training.docs = value.training.docs
     ? (await getFileName([value.training.docs]))[0]
     : null;
-
-  value.contract.docs = value.contract.docs
-    ? (await getFileName([value.contract.docs]))[0]
-    : null;
+  if (value.contract.docs) {
+    value.contract.docs = value.contract.docs
+      ? (await getFileName([value.contract.docs]))[0]
+      : null;
+    const [isContractPdfValid, [isContractPdfExist]] = await Promise.all([
+      checkDuplicateAwsImgsInRecords([value.contract.docs]),
+      checkImageExists([value.contract.docs]),
+    ]);
+    if (!isContractPdfValid.success) {
+      return next(new appError("Video contract is already used", 400));
+    }
+    if (!isContractPdfExist) {
+      return next(new appError("Video contract does not exist", 400));
+    }
+  }
   if (error) {
     const errors = error.details.map((err) => err.message).join(", ");
     return next(new appError(errors, 400));
   }
   const [
-    isSpecificationVideoValid,
-    [isSpecificationVideoExist],
     isSpecificationDocsValid,
     [isSpecificationDocsExist],
     isTrainingVideoValid,
     [isTrainingVideoExist],
     isTrainingDocsValid,
     [isTrainingDocsExist],
-    isContractPdfValid,
-    [isContractPdfExist],
   ] = await Promise.all([
-    checkDuplicateAwsImgsInRecords([value.specification.video]),
-    checkImageExists([value.specification.video]),
     checkDuplicateAwsImgsInRecords([value.specification.docs]),
     checkImageExists([value.specification.docs]),
     checkDuplicateAwsImgsInRecords([value.training.video]),
     checkImageExists([value.training.video]),
     checkDuplicateAwsImgsInRecords([value.training.docs]),
     checkImageExists([value.training.docs]),
-    checkDuplicateAwsImgsInRecords([value.contract.docs]),
-    checkImageExists([value.contract.docs]),
   ]);
-  if (!isSpecificationVideoValid.success) {
-    return next(new appError("Video specification is already used", 400));
-  }
-  if (!isSpecificationVideoExist) {
-    return next(new appError("Video specification does not exist", 400));
-  }
   if (!isSpecificationDocsValid.success) {
     return next(new appError("Docs specification is already used", 400));
   }
@@ -104,12 +114,6 @@ const createJob = catchAsync(async (req, res, next) => {
   if (!isTrainingDocsExist) {
     return next(new appError("Docs training does not exist", 400));
   }
-  if (!isContractPdfValid.success) {
-    return next(new appError("Video contract is already used", 400));
-  }
-  if (!isContractPdfExist) {
-    return next(new appError("Video contract does not exist", 400));
-  }
 
   const testBuilder = await textBuilder_model.findOne({
     _id: value.testBuilderId,
@@ -122,15 +126,19 @@ const createJob = catchAsync(async (req, res, next) => {
     employerId: req.user.id,
     ...value,
   });
-  [newJob.specification.video] = await generateSignedUrl([
-    newJob.specification.video,
-  ]);
+  if (newJob.specification.video) {
+    [newJob.specification.video] = await generateSignedUrl([
+      newJob.specification.video,
+    ]);
+  }
   [newJob.specification.docs] = await generateSignedUrl([
     newJob.specification.docs,
   ]);
   [newJob.training.video] = await generateSignedUrl([newJob.training.video]);
   [newJob.training.docs] = await generateSignedUrl([newJob.training.docs]);
-  [newJob.contract.docs] = await generateSignedUrl([newJob.contract.docs]);
+  if (newJob.contract.docs) {
+    [newJob.contract.docs] = await generateSignedUrl([newJob.contract.docs]);
+  }
   successMessage(202, res, "Job created successfully", newJob);
   await jobdraft_model.deleteOne({
     employerId: req.user.id,
@@ -162,9 +170,22 @@ const getJobs = catchAsync(async (req, res, next) => {
   const totalPages = Math.ceil(totalJobs / limit);
   jobs = await Promise.all(
     jobs.map(async (job) => {
-      job.applications = 2;
-      job.testCompleted = 1;
-      job.contractSigned = 3;
+      const [applications, testCompleted, contractSigned] = await Promise.all([
+        jobApply_model.countDocuments({
+          jobId: job._id.toString(),
+        }),
+        jobApply_model.countDocuments({
+          jobId: job._id.toString(),
+          status: 3,
+        }),
+        jobApply_model.countDocuments({
+          jobId: job._id.toString(),
+          status: 5,
+        }),
+      ]);
+      job.applications = applications;
+      job.testCompleted = testCompleted;
+      job.contractSigned = contractSigned;
       [job.specification.video] = await generateSignedUrl([
         job.specification.video,
       ]);
@@ -275,11 +296,40 @@ const editJob = catchAsync(async (req, res, next) => {
     const errors = error.details.map((detail) => detail.message).join(",");
     return next(new appError(errors, 400));
   }
-  [value.specification.video] = await getFileName([value.specification.video]);
+  if (value.specification.video) {
+    value.specification.video = value.specification.video
+      ? (await getFileName([value.specification.video]))[0]
+      : null;
+    const [isSpecificationVideoValid, [isSpecificationVideoExist]] =
+      await Promise.all([
+        checkDuplicateAwsImgsInRecords([value.specification.video]),
+        checkImageExists([value.specification.video]),
+      ]);
+    if (!isSpecificationVideoValid.success) {
+      return next(new appError("Video specification is already used", 400));
+    }
+    if (!isSpecificationVideoExist) {
+      return next(new appError("Video specification does not exist", 400));
+    }
+  }
   [value.specification.docs] = await getFileName([value.specification.docs]);
   [value.training.video] = await getFileName([value.training.video]);
   [value.training.docs] = await getFileName([value.training.docs]);
-  [value.contract.docs] = await getFileName([value.contract.docs]);
+  if (value.contract.docs) {
+    value.contract.docs = value.contract.docs
+      ? (await getFileName([value.contract.docs]))[0]
+      : null;
+    const [isContractPdfValid, [isContractPdfExist]] = await Promise.all([
+      checkDuplicateAwsImgsInRecords([value.contract.docs]),
+      checkImageExists([value.contract.docs]),
+    ]);
+    if (!isContractPdfValid.success) {
+      return next(new appError("Video contract is already used", 400));
+    }
+    if (!isContractPdfExist) {
+      return next(new appError("Video contract does not exist", 400));
+    }
+  }
   const previousJob = await job_model.findOne({
     _id: jobId,
     employerId: req.user.id,
@@ -288,22 +338,23 @@ const editJob = catchAsync(async (req, res, next) => {
     return next(new appError(`Job not found`, 400));
   }
   const checks = [];
-
-  if (previousJob.specification.video !== value.specification.video) {
-    checks.push(
-      checkImageExists([value.specification.video])
-        .then((exist) => {
-          if (!exist[0]) {
-            throw new appError(`Specification Video not found`, 400);
-          }
-          return checkDuplicateAwsImgsInRecords([value.specification.video]);
-        })
-        .then((result) => {
-          if (!result.success) {
-            throw new appError(`Specification Video already Used`, 400);
-          }
-        })
-    );
+  if (value.specification.video) {
+    if (previousJob.specification.video !== value.specification.video) {
+      checks.push(
+        checkImageExists([value.specification.video])
+          .then((exist) => {
+            if (!exist[0]) {
+              throw new appError(`Specification Video not found`, 400);
+            }
+            return checkDuplicateAwsImgsInRecords([value.specification.video]);
+          })
+          .then((result) => {
+            if (!result.success) {
+              throw new appError(`Specification Video already Used`, 400);
+            }
+          })
+      );
+    }
   }
 
   if (previousJob.specification.docs !== value.specification.docs) {
@@ -357,21 +408,23 @@ const editJob = catchAsync(async (req, res, next) => {
     );
   }
 
-  if (previousJob.contract.docs !== value.contract.docs) {
-    checks.push(
-      checkImageExists([value.contract.docs])
-        .then((exist) => {
-          if (!exist[0]) {
-            throw new appError(`Contract Video not found`, 400);
-          }
-          return checkDuplicateAwsImgsInRecords([value.contract.docs]);
-        })
-        .then((result) => {
-          if (!result.success) {
-            throw new appError(`Contract Video already Used`, 400);
-          }
-        })
-    );
+  if (previousJob.contract.docs) {
+    if (previousJob.contract.docs !== value.contract.docs) {
+      checks.push(
+        checkImageExists([value.contract.docs])
+          .then((exist) => {
+            if (!exist[0]) {
+              throw new appError(`Contract Video not found`, 400);
+            }
+            return checkDuplicateAwsImgsInRecords([value.contract.docs]);
+          })
+          .then((result) => {
+            if (!result.success) {
+              throw new appError(`Contract Video already Used`, 400);
+            }
+          })
+      );
+    }
   }
 
   await Promise.all(checks);
@@ -388,16 +441,33 @@ const editJob = catchAsync(async (req, res, next) => {
     { $set: value },
     { new: true }
   );
-  [job.specification.video] = await generateSignedUrl([
-    job.specification.video,
-  ]);
+  if (job.specification.video) {
+    [job.specification.video] = await generateSignedUrl([
+      job.specification.video,
+    ]);
+  }
   [job.specification.docs] = await generateSignedUrl([job.specification.docs]);
   [job.training.video] = await generateSignedUrl([job.training.video]);
   [job.training.docs] = await generateSignedUrl([job.training.docs]);
-  [job.contract.docs] = await generateSignedUrl([job.contract.docs]);
-  job.applications = 2;
-  job.testCompleted = 1;
-  job.contractSigned = 3;
+  if (job.contract.docs) {
+    [job.contract.docs] = await generateSignedUrl([job.contract.docs]);
+  }
+  const [applications, testCompleted, contractSigned] = await Promise.all([
+    jobApply_model.countDocuments({
+      jobId: job._id.toString(),
+    }),
+    jobApply_model.countDocuments({
+      jobId: job._id.toString(),
+      status: 3,
+    }),
+    jobApply_model.countDocuments({
+      jobId: job._id.toString(),
+      status: 5,
+    }),
+  ]);
+  job.applications = applications;
+  job.testCompleted = testCompleted;
+  job.contractSigned = contractSigned;
   return successMessage(202, res, `job updated successfully`, job);
 });
 

@@ -15,6 +15,7 @@ const {
   toggleCandidateBlockStatus,
   softDeleteCandidateByQuery,
   updateCandidateEmailById,
+  verifySignup,
 } = require("../controllers/candidate_controller");
 // model
 const candidate = require("../models/candidate_model");
@@ -63,6 +64,37 @@ const route = express.Router();
  *         description: Signup success
  */
 route.post("/signup", signUpCandidate);
+
+/**
+ * @swagger
+ * /api/v1/candidate/verifySignup:
+ *   post:
+ *     summary: Verify candidate signup using OTP.
+ *     description: This endpoint is used to verify the candidate's signup process by checking the OTP sent to the provided email. If the OTP matches, the employer's account will be marked as verified. A free package will also be assigned if available.
+ *     tags:
+ *       - Candidate/account
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Email address of the employer.
+ *                 example: employer@example.com
+ *               otp:
+ *                 type: string
+ *                 description: OTP sent to the employer's email.
+ *                 example: "123456"
+ *     responses:
+ *       202:
+ *         description: Signup successfully verified.
+ */
+route.post("/verifySignup", verifySignup);
 
 /**
  * @swagger

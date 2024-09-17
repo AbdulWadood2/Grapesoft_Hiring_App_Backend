@@ -65,19 +65,37 @@ const getJobApplications = catchAsync(async (req, res, next) => {
       const candidate = await candidate_model.findOne({
         _id: item.candidateId,
       });
-      if (candidate.avatar)
-        [candidate.avatar] = await generateSignedUrl([candidate.avatar]);
-      if (candidate.aboutVideo)
-        [candidate.aboutVideo] = await generateSignedUrl([
-          candidate.aboutVideo,
-        ]);
-      if (candidate.cv)
-        [candidate.cv] = await generateSignedUrl([candidate.cv]);
-      item.candidate = candidate;
-      if (item.cv) [item.cv] = await generateSignedUrl([item.cv]);
-      if (item.aboutVideo)
-        [item.aboutVideo] = await generateSignedUrl([item.aboutVideo]);
 
+      const urlsToGenerate = [];
+
+      if (candidate.avatar) urlsToGenerate.push(candidate.avatar);
+      if (candidate.aboutVideo) urlsToGenerate.push(candidate.aboutVideo);
+      if (candidate.cv) urlsToGenerate.push(candidate.cv);
+      if (item.cv) urlsToGenerate.push(item.cv);
+      if (item.aboutVideo) urlsToGenerate.push(item.aboutVideo);
+
+      const signedUrls = await generateSignedUrl(urlsToGenerate);
+
+      // Assign the signed URLs back to their respective fields
+      let index = 0;
+      if (candidate.avatar) candidate.avatar = signedUrls[index++];
+      if (candidate.aboutVideo) candidate.aboutVideo = signedUrls[index++];
+      if (candidate.cv) candidate.cv = signedUrls[index++];
+      if (item.cv) item.cv = signedUrls[index++];
+      if (item.aboutVideo) item.aboutVideo = signedUrls[index++];
+
+      item.candidate = candidate;
+
+      const jobContract = await job_model
+        .findOne({
+          _id: item.jobId.toString(),
+        })
+        .select("contract");
+      if (jobContract.contract.docs) {
+        item.contractedType = true;
+      } else {
+        item.contractedType = false;
+      }
       return item;
     })
   );
@@ -154,7 +172,16 @@ const getSingleJobApplication = catchAsync(async (req, res, next) => {
     [candidate.aboutVideo] = await generateSignedUrl([candidate.aboutVideo]);
   if (candidate.cv) [candidate.cv] = await generateSignedUrl([candidate.cv]);
   jobApplication.candidate = candidate;
-
+  const jobContract = await job_model
+    .findOne({
+      _id: jobApplication.jobId.toString(),
+    })
+    .select("contract");
+  if (jobContract.contract.docs) {
+    jobApplication.contractedType = true;
+  } else {
+    jobApplication.contractedType = false;
+  }
   // Respond with the job application details
   return successMessage(
     200,
