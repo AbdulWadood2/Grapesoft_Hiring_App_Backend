@@ -4,6 +4,7 @@ const connectionDb = require("./config/Db.js");
 const cors = require("cors");
 // body parser
 const bodyParser = require("body-parser");
+
 // routes
 const employer_routes = require("./routes/employer_routes.js");
 const candidate_routes = require("./routes/candidate_routes.js");
