@@ -260,14 +260,14 @@ const editQuestion = catchAsync(async (req, res, next) => {
 // description delete question
 const deleteQuestion = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const questionsCounts = await testQuestion_model.countDocuments({
-    employerId: req.user.id,
-  });
-  if (questionsCounts == 1) {
-    return next(
-      new appError("you can't delete the last question plz edit", 400)
-    );
-  }
+  // const questionsCounts = await testQuestion_model.countDocuments({
+  //   employerId: req.user.id,
+  // });
+  // if (questionsCounts == 1) {
+  //   return next(
+  //     new appError("you can't delete the last question plz edit", 400)
+  //   );
+  // }
   const deleteQuestionIs = await testQuestion_model.findOneAndDelete({
     _id: id,
     employerId: req.user.id,

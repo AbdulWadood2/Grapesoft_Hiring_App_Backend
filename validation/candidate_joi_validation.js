@@ -17,10 +17,9 @@ const candidateLogInValidationSchema = Joi.object({
 });
 
 const editProfileValidationSchema = Joi.object({
-  avatar: Joi.string().pattern(
-    /\.(jpeg|jpg|png|jfif)$/i,
-    "image format (jpeg, jpg, png, jfif)"
-  ),
+  avatar: Joi.string()
+    .pattern(/\.(jpeg|jpg|png|jfif)$/i, "image format (jpeg, jpg, png, jfif)")
+    .allow(null),
   first_name: Joi.string(),
   last_name: Joi.string(),
   countryOfRecidence: Joi.string().allow(
