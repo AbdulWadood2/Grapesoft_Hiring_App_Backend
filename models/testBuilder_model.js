@@ -11,6 +11,10 @@ const testSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    noQuestionWarning: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

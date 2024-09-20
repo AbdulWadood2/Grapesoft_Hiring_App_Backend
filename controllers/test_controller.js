@@ -64,11 +64,28 @@ const getTestForPerform = catchAsync(async (req, res, next) => {
   const testQuestions = await testQuestion_model.find({
     testBuilderId: testBuilder._id.toString(),
   });
-  return successMessage(202, res, "test fetched success", {
+  successMessage(202, res, "test fetched success", {
     job,
     testBuilder,
     testQuestions,
   });
+  if (testQuestions.length == 0) {
+    if (
+      !(testBuilder.noQuestionWarning ? testBuilder.noQuestionWarning : false)
+    ) {
+      await notification_model.create({
+        senderId: req.user.id,
+        receiverId: testBuilder.employerId,
+        message: "Test has no questions",
+        description: `Please add questions to the test to proceed with the test for test "${testBuilder.testName}"`,
+      });
+      testBuilder.noQuestionWarning = true;
+      await testBuilder.save();
+    }
+  } else {
+    testBuilder.noQuestionWarning = false;
+    await testBuilder.save();
+  }
 });
 
 // method post
