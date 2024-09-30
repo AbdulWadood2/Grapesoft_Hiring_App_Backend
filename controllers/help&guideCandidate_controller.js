@@ -23,7 +23,7 @@ const createHelpGuidecandidate = catchAsync(async (req, res, next) => {
   );
   if (error) {
     const errors = error.details.map((err) => err.message).join(", ");
-    return next(new AppError(errors, 400));
+    return next(new appError(errors, 400));
   }
   const helpguidecandidateCount =
     await helpguideCandidate_model.countDocuments();

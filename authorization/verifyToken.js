@@ -40,25 +40,29 @@ const verifyToken = (model) => async (req, res, next) => {
     token = token[1];
     const payload = JWT.verify(token, process.env.JWT_SEC);
     let user;
+    let userCollectionName;
     for (let item of model) {
       user = await item.findOne({
         _id: payload.id,
       });
       if (user) {
+        userCollectionName = item.collection.name; // Capture the collection name
         break;
       }
     }
     if (!user) {
       return next(new AppError("Invalid user", 400));
     }
-    if (user.isBlocked) {
-      return next(new AppError("you are block", 400));
-    }
-    if (user.isDeleted) {
-      return next(new AppError("user is deleted", 400));
-    }
-    if (!user.isverified) {
-      return next(new AppError("user not verified", 400));
+    if (userCollectionName !== "admins") {
+      if (user.isBlocked) {
+        return next(new AppError("you are block", 400));
+      }
+      if (user.isDeleted) {
+        return next(new AppError("user is deleted", 400));
+      }
+      if (!user.isverified) {
+        return next(new AppError("user not verified", 400));
+      }
     }
     const payloadunique = [];
     // Create an array of promises to verify each token
@@ -98,14 +102,18 @@ const refreshToken = (model) =>
     if (!user) {
       throw new Error("you are not login");
     }
-    if (user.isBlocked) {
-      return next(new AppError("you are block", 400));
-    }
-    if (user.isDeleted) {
-      return next(new AppError("user is deleted", 400));
-    }
-    if (user.isverified) {
-      return next(new AppError("user not verified", 400));
+    let userCollectionName = model.collection.name; // Capture the collection name
+
+    if (userCollectionName !== "admins") {
+      if (user.isBlocked) {
+        return next(new AppError("you are block", 400));
+      }
+      if (user.isDeleted) {
+        return next(new AppError("user is deleted", 400));
+      }
+      if (user.isverified) {
+        return next(new AppError("user not verified", 400));
+      }
     }
     let payload = JWT.verify(refreshToken, process.env.JWT_SEC);
     const newAccessToken = signAccessToken(user._id, payload.uniqueId);
