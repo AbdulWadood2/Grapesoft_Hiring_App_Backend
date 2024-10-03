@@ -435,15 +435,14 @@ const editProfileValidationSchema = Joi.object({
   telegram: Joi.string().allow(null),
   skype: Joi.string().allow(null),
   other: Joi.string().allow(null),
-  aboutVideo: Joi.string().pattern(
-    /\.(mp4|mov|avi)$/i,
-    "video format (mp4, mov, avi)"
-  ),
+  aboutVideo: Joi.string()
+    .pattern(/\.(mp4|mov|avi)$/i, "video format (mp4, mov, avi)")
+    .allow(null),
   cv: Joi.string().pattern(
     /\.(pdf|doc|docx)$/i,
     "document format (pdf, doc, docx)"
   ),
-  coverLetter: Joi.string(),
+  coverLetter: Joi.string().allow(null),
 });
 
 const jobApplyValidationSchema = Joi.object({
@@ -873,7 +872,7 @@ const jobApplyValidationSchema = Joi.object({
   cv: Joi.string()
     .allow(null)
     .pattern(/\.(pdf|doc|docx)$/i, "document format (pdf, doc, docx)"),
-  coverLetter: Joi.string().allow(null),
+  coverLetter: Joi.string().allow(null, ""),
 }).options({
   abortEarly: false,
 });
