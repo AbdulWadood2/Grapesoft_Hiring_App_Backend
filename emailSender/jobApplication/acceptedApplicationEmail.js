@@ -116,7 +116,7 @@ module.exports = class AcceptedApplicationEmail {
   }
   async send() {
     const mailOptions = {
-      from: "Grapesoft inteview app",
+      from: "Mantiqsoft interview app",
       to: this.to,
       subject: "Application accepted",
       html: html

@@ -51,7 +51,7 @@ module.exports = class signContractApplicationEmail {
   }
   async send() {
     const mailOptions = {
-      from: "Grapesoft inteview app",
+      from: "Mantiqsoft inteview app",
       to: this.to,
       subject: "Passed test - SIGN CONTRACT PLZ",
       html: html

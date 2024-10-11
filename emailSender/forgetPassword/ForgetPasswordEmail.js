@@ -56,9 +56,9 @@ module.exports = class ForgetPasswordEmail {
   }
   async send() {
     const mailOptions = {
-      from: "Grapesoft inteview app",
+      from: "Mantiqsoft inteview app",
       to: this.to,
-      subject: "Grapesoft verification code",
+      subject: "Mantiqsoft verification code",
       html: html.replace("#code#", this.resetcode),
       //   html:
     };

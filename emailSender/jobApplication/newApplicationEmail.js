@@ -106,7 +106,7 @@ module.exports = class NewApplicationEmail {
 
   async send() {
     const mailOptions = {
-      from: "Grapesoft interview app",
+      from: "Mantiqsoft interview app",
       to: this.to,
       subject: "New Candidate Application",
       html: html
@@ -114,7 +114,7 @@ module.exports = class NewApplicationEmail {
         .replaceAll("[Candidate's Name]", this.candidateName)
         .replaceAll("[Job Title]", this.jobTitle)
         .replaceAll("[jobApplyId]", this.jobApplyId)
-        .replaceAll("[Your Company Name]", "Grapesoft"),
+        .replaceAll("[Your Company Name]", "Mantiqsoft"),
     };
 
     await this.newTransport().sendMail(mailOptions);

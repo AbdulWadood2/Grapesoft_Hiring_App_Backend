@@ -27,11 +27,8 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "https://adminhiringsoftware.grapesoft.co.uk",
-      "https://apihiringsoftware.grapesoft.co.uk",
-      "https://autohire.grapesoft.co.uk",
-      "https://adminhiringapp.mantiqsoft.com",
-      "https://grapesofthrinterviewapp.mantiqsoft.com",
+      "https://adminhiring.mantiqsoft.com",
+      "https://hiring.mantiqsoft.com",
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:3002",

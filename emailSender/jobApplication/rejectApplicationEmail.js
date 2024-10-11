@@ -59,7 +59,7 @@ module.exports = class rejectApplicationEmail {
   }
   async send() {
     const mailOptions = {
-      from: "Grapesoft inteview app",
+      from: "Mantiqsoft inteview app",
       to: this.to,
       subject: "Application rejected",
       html: html
